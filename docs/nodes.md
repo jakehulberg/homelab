@@ -10,6 +10,9 @@
 Servers run the control plane (API server, scheduler, embedded etcd) and also run workloads.
 Three servers keep the cluster up if any one mini goes down.
 
+k3s version: `v1.36.5+k3s1`. Install the same version on every node with
+`INSTALL_K3S_VERSION=v1.36.5+k3s1`.
+
 ## Hosts
 
 All three minis are Apple M4 (4 performance + 6 efficiency cores), 16GB RAM, 228GB disk.
