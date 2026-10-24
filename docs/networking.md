@@ -37,10 +37,9 @@ browser
 - Hostnames are `<app>.home.jakehulberg.com`. A wildcard DNS record in Cloudflare points every
   name under `home.jakehulberg.com` at the four node Tailscale IPs, so a new app needs no DNS
   change. See [certificates](certificates.md).
-- HTTP only for now. The wildcard certificate is issued; the Gateway's HTTPS listener isn't added
-  yet.
-- podinfo still uses the earlier `nip.io` name (`podinfo.100.102.222.95.nip.io`, which resolves
-  to k3s-mini2's Tailscale IP).
+- The Gateway has two listeners: `web` (HTTP, pod port 8000, Service port 80) and `websecure`
+  (HTTPS, pod port 8443, Service port 443, using the `home-wildcard-tls` certificate). A route
+  that doesn't name a listener (`sectionName`) attaches to both.
 - Everything is reachable from devices on the tailnet. Public exposure (for demos) is a later
   decision: Tailscale Funnel or Cloudflare Tunnel.
 
