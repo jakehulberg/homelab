@@ -1,10 +1,10 @@
-# k3s server VM on mini3. 8GiB, leaving room on the host for the demo Infisical in Docker.
+# k3s server VM on mini3. 6GiB, leaving room on the host for Docker (demo Infisical, capped at 6GB).
 # Create: limactl create --name=k3s-mini3 lima/k3s-mini3.yaml
 
 vmType: vz
 arch: aarch64
 cpus: 6
-memory: 8GiB
+memory: 6GiB
 disk: 35GiB
 
 images:
