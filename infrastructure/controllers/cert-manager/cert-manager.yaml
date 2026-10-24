@@ -30,4 +30,8 @@ spec:
   values:
     crds:
       enabled: true   # install cert-manager's own types (Certificate, ClusterIssuer); off by default
+    # Check DNS-01 challenge records against public DNS. The cluster's resolver (via the VMs and
+    # Tailscale) gives confusing answers for them.
+    dns01RecursiveNameservers: "1.1.1.1:53,8.8.8.8:53"
+    dns01RecursiveNameserversOnly: true
 
