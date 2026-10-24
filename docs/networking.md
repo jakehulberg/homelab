@@ -2,9 +2,7 @@
 
 ## Nodes talk over Tailscale
 
-The minis are on Wi-Fi, and bridged VM networking over Wi-Fi is unreliable (most access points
-drop frames from extra MAC addresses). So each Lima VM uses Lima's default NAT networking and
-joins the tailnet itself. k3s uses the Tailscale interface for everything:
+The minis are on Wi-Fi, and bridged VM networking over Wi-Fi is unreliable (most access points drop frames from extra MAC addresses). So each Lima VM uses Lima's default NAT networking and joins the tailnet itself. k3s uses the Tailscale interface for everything:
 
 - `--node-ip` is the node's Tailscale IP.
 - `flannel-iface: tailscale0` sends pod traffic over Tailscale (`k3s/config.yaml`).
