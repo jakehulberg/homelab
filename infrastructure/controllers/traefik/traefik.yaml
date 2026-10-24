@@ -42,5 +42,13 @@ spec:
           namespacePolicy:
             from: All  
           certificateRefs:
-           - name: home-wildcard-tls   
+           - name: home-wildcard-tls
+    ports:
+      web:
+        http:
+          redirections:
+            entryPoint:
+              to: websecure     # send every HTTP request to the HTTPS port
+              scheme: https
+              permanent: true   # 301, so browsers remember and go straight to https next time
 
