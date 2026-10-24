@@ -23,7 +23,7 @@ ClusterIssuer letsencrypt: "get certs from Let's Encrypt,       (infrastructure/
   prove ownership via Cloudflare DNS"
 Certificate home-wildcard: "*.home.jakehulberg.com"             (infrastructure/configs/certificate.yaml)
   → Secret home-wildcard-tls in the traefik namespace           (created by cert-manager, never in git)
-  → used by the Gateway's HTTPS listener
+  → used by the Gateway's HTTPS listener (not added yet)
 ```
 
 ### Issuing (DNS-01)
