@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: home-wildcard
+  namespace: traefik            # same namespace as the Gateway, which will use it
+spec:
+  secretName: home-wildcard-tls # cert-manager stores the issued certificate here
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+  dnsNames:
+    - "*.home.jakehulberg.com"
+
