@@ -13,6 +13,9 @@ spec:
   url: oci://ghcr.io/traefik/helm/traefik
   ref:
     tag: "42.1.3"              # exact version, so upgrades only happen when you change this
+  layerSelector:               # pick the chart layer (the artifact also has a signature layer)
+    mediaType: "application/vnd.cncf.helm.chart.content.v1.tar+gzip"
+    operation: copy
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
