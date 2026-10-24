@@ -24,3 +24,4 @@ of truth: the cluster is changed by committing here.
 - [GitOps](docs/gitops.md): how Flux reads this repo, adding and removing apps
 - [Secrets](docs/secrets.md): encrypting secrets with SOPS
 - [Cheatsheet](docs/cheatsheet.md): everyday Lima, kubectl and Flux commands
+- [Learning](learning/README.md): reading list for the concepts behind this repo
