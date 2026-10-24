@@ -1,7 +1,6 @@
 # Learning
 
-Reading list for understanding what this homelab is built from. Each one maps to something in the
-repo.
+Reading list for understanding what this homelab is built from. 
 
 | # | Read | Time | Why it matters here |
 |---|---|---|---|
@@ -10,6 +9,3 @@ repo.
 | 3 | [Flux repository structure](https://fluxcd.io/flux/guides/repository-structure/) | ~15m | Why the repo splits `clusters/`, `infrastructure/` and `apps/` |
 | 4 | [Gateway API overview](https://gateway-api.sigs.k8s.io/concepts/api-overview/) | ~15m | GatewayClass, Gateway and HTTPRoute: how traffic reaches apps through Traefik |
 
-## Notes
-
-Add a file here per topic as things click, in your own words.
