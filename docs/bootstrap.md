@@ -116,12 +116,39 @@ kubectl get nodes
 
 ## 7. kubeconfig on your laptop
 
+k3s writes an admin kubeconfig inside the first server VM. It points at `127.0.0.1`, so copy it
+out, point it at `k3s-mini1` (reachable over Tailscale), and merge it into `~/.kube/config` as a
+context named `homelab`. Never commit this file: it is full admin access to the cluster.
+
+**a. Copy it out.** From your laptop. SSH in as the macOS user that created the VM, and use the
+full `limactl` path, since non-interactive SSH doesn't load Homebrew's PATH:
+
 ```sh
-ssh mini1 'limactl shell k3s-mini1 sudo cat /etc/rancher/k3s/k3s.yaml' \
-  | sed 's/127.0.0.1/k3s-mini1/' > ~/.kube/homelab.yaml
-export KUBECONFIG=~/.kube/homelab.yaml
+ssh mini1 '/opt/homebrew/bin/limactl shell k3s-mini1 sudo cat /etc/rancher/k3s/k3s.yaml' \
+  | sed 's/127.0.0.1/k3s-mini1/' > /tmp/homelab.yaml
+```
+
+**b. Rename its context.** k3s names it `default`:
+
+```sh
+KUBECONFIG=/tmp/homelab.yaml kubectl config rename-context default homelab
+```
+
+**c. Merge it into `~/.kube/config`:**
+
+```sh
+KUBECONFIG=~/.kube/config:/tmp/homelab.yaml kubectl config view --flatten > /tmp/kubeconfig \
+  && mv /tmp/kubeconfig ~/.kube/config && rm /tmp/homelab.yaml
+```
+
+**d. Use it:**
+
+```sh
+kubectl config use-context homelab
 kubectl get nodes -o wide
 ```
+
+Switch clusters with `kubectl config use-context <name>`; list them with `kubectl config get-contexts`.
 
 ## 8. Flux
 
