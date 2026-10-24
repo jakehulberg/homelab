@@ -27,6 +27,9 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
 
 - draw.io
 - life-dashboard
+- Plant watering app
+- KubeCon demo
+- Agents: run my own agents on the cluster, to learn and to dogfood the idea
 
 ## Candidates
 
