@@ -50,5 +50,5 @@ spec:
             entryPoint:
               to: websecure     # send every HTTP request to the HTTPS port
               scheme: https
-              permanent: true   # 301, so browsers remember and go straight to https next time
+              permanent: true   # 308, so browsers remember and go straight to https next time
 
