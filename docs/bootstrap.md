@@ -42,28 +42,40 @@ limactl shell k3s-mini1 sudo sh -c '
 
 ## 5. Install k3s
 
-First server (mini1), which creates the cluster:
+The version is pinned so every node matches (see `docs/nodes.md`).
+
+**a. Shell into the VM** (on that mini):
 
 ```sh
 limactl shell k3s-mini1
-curl -sfL https://get.k3s.io | K3S_TOKEN=<token> sh -s - server \
+```
+
+**b. Set the token.** Paste it and press Enter; nothing shows on screen. Run this on its own line,
+not pasted together with the next command, or `read` swallows the next line as the token.
+
+```sh
+read -s K3S_TOKEN && export K3S_TOKEN
+```
+
+**c. Install.** The first server (mini1) creates the cluster:
+
+```sh
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 sh -s - server \
   --cluster-init \
   --node-name k3s-mini1 \
   --node-ip "$(tailscale ip -4)"
 ```
 
-mini2 and mini3 join it:
+mini2 and mini3 join it (use `k3s-mini3` on mini3):
 
 ```sh
-limactl shell k3s-mini2
-curl -sfL https://get.k3s.io | K3S_TOKEN=<token> sh -s - server \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 sh -s - server \
   --server https://k3s-mini1:6443 \
   --node-name k3s-mini2 \
   --node-ip "$(tailscale ip -4)"
 ```
 
-Record the installed version (`k3s --version`) in `docs/nodes.md` and pin it with
-`INSTALL_K3S_VERSION` on later installs.
+**d. Check.** `k3s --version` should print the pinned version.
 
 ## 6. Add the Pi
 
