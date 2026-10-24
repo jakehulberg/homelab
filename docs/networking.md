@@ -40,6 +40,8 @@ browser
 - The Gateway has two listeners: `web` (HTTP, pod port 8000, Service port 80) and `websecure`
   (HTTPS, pod port 8443, Service port 443, using the `home-wildcard-tls` certificate). A route
   that doesn't name a listener (`sectionName`) attaches to both.
+- Traefik redirects all HTTP to HTTPS (308) at its `web` port, before routing
+  (`ports.web.http.redirections` in the Traefik values). Apps don't need their own redirect.
 - Everything is reachable from devices on the tailnet. Public exposure (for demos) is a later
   decision: Tailscale Funnel or Cloudflare Tunnel.
 
