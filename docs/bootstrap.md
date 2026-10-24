@@ -67,16 +67,52 @@ Record the installed version (`k3s --version`) in `docs/nodes.md` and pin it wit
 
 ## 6. Add the Pi
 
-On the Pi (already on Tailscale), enable memory cgroups: append
-`cgroup_memory=1 cgroup_enable=memory` to the single line in `/boot/firmware/cmdline.txt`, then reboot.
+The Pi runs k3s directly (no VM) and is already on Tailscale. It joins as an agent (worker only).
 
-Copy `k3s/config.yaml` to `/etc/rancher/k3s/config.yaml` (not `server.yaml`), then:
+**a. Enable memory cgroups and reboot.** On the Pi (`ssh pi`):
 
 ```sh
-curl -sfL https://get.k3s.io | K3S_URL=https://k3s-mini1:6443 K3S_TOKEN=<token> sh -s - agent \
+grep -q cgroup_enable=memory /boot/firmware/cmdline.txt \
+  || sudo sed -i '1 s/$/ cgroup_memory=1 cgroup_enable=memory/' /boot/firmware/cmdline.txt
+sudo reboot
+```
+
+**b. Copy the k3s config over.** From your laptop, in this repo (after the Pi is back up):
+
+```sh
+scp k3s/config.yaml pi:/tmp/config.yaml
+```
+
+Only `config.yaml`. `server.yaml` is for the minis.
+
+**c. Put the config in place.** On the Pi:
+
+```sh
+sudo mkdir -p /etc/rancher/k3s
+sudo mv /tmp/config.yaml /etc/rancher/k3s/config.yaml
+```
+
+**d. Set the token.** On the Pi. Paste it and press Enter; nothing shows on screen.
+
+```sh
+read -s K3S_TOKEN && export K3S_TOKEN
+```
+
+**e. Install k3s as an agent.** On the Pi:
+
+```sh
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 K3S_URL=https://k3s-mini1:6443 sh -s - agent \
   --node-name pi \
   --node-ip "$(tailscale ip -4)"
 ```
+
+**f. Check it joined.** From your laptop:
+
+```sh
+kubectl get nodes
+```
+
+`pi` should show `Ready` within a minute.
 
 ## 7. kubeconfig on your laptop
 
