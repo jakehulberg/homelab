@@ -1,0 +1,6 @@
+# Shared k3s config for every node. Copy to /etc/rancher/k3s/config.yaml before installing.
+# Node-specific flags (node-name, node-ip, server, cluster-init) are passed on the install command.
+# See docs/bootstrap.md.
+
+# All node-to-node traffic goes over Tailscale (the minis are on Wi-Fi, so no bridged networking).
+flannel-iface: tailscale0

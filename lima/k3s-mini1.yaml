@@ -1,0 +1,22 @@
+# k3s server VM on mini1. mini1 is also a dev machine, so this VM is the smallest.
+# Create: limactl create --name=k3s-mini1 lima/k3s-mini1.yaml
+
+vmType: vz
+arch: aarch64
+cpus: 4
+memory: 6GiB
+disk: 15GiB
+
+images:
+  - location: https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-arm64.img
+    arch: aarch64
+
+# No mounts, port forwarding or containerd. The node is reached over Tailscale.
+plain: true
+
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      command -v tailscale >/dev/null || curl -fsSL https://tailscale.com/install.sh | sh

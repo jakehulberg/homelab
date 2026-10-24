@@ -4,10 +4,10 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
 
 ## Build order
 
-1. **Cluster:** install k3s (or Talos) on the nodes.
+1. **Cluster:** k3s in Lima VMs on the 3 minis (servers) plus the Pi (agent), networked over
+   Tailscale. See [nodes](docs/nodes.md), [networking](docs/networking.md), [bootstrap](docs/bootstrap.md).
 2. **Flux:** `flux bootstrap github` pointed at this repo.
 3. **Core infra:**
-   - MetalLB (LoadBalancer IPs)
    - Traefik (ingress: routes hostnames to services, handles HTTPS)
    - cert-manager (TLS certificates)
    - Storage: Longhorn or local-path

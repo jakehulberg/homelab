@@ -1,0 +1,11 @@
+# Extra k3s config for server (control plane) nodes. Copy to /etc/rancher/k3s/config.yaml.d/server.yaml
+# on the minis only, not the Pi.
+
+# Flux installs Traefik, so the bundled one is disabled.
+disable:
+  - traefik
+
+tls-san:
+  - k3s-mini1
+  - k3s-mini2
+  - k3s-mini3
