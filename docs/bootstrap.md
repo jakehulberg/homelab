@@ -190,7 +190,7 @@ git pull
 
 ```sh
 flux check                    # ends with "all checks passed"
-flux get kustomizations       # flux-system, infrastructure, apps all READY True
+flux get kustomizations       # flux-system, infrastructure, infra-configs, apps all READY True
 ```
 
 From here on, the cluster is changed by committing to this repo.
