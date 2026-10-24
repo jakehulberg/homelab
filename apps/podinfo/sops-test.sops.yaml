@@ -1,0 +1,22 @@
+apiVersion: v1
+data:
+    hello: ENC[AES256_GCM,data:T1sytJJUHoM=,iv:6kNlzx7MmOLOY0efChIIAARfHrwh9961TIzSqKcK7lI=,tag:7KDKWBALT1/Bek2+3LVnmQ==,type:str]
+kind: Secret
+metadata:
+    name: sops-test
+    namespace: podinfo
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBGRkVnQkg5Qndod29DTW9t
+            WjdLM1RGaE5LUVQyMW9jY3BTdmFxZXVQOTM0ClRGTFZtYzR4VDJINjFHRDhSV0xL
+            Si9CbTNFb2thTzlUNEhOMy9CNWpsOVkKLS0tIEh1QXZhVXRmTmZ0ei9WQjNyTzdP
+            cmxyMDJSOEtzZkw0azErZnhaZ1pxc0kKpxYLLiaRTde8reZrX1teWk5fYKZgQ6mK
+            OQyHfvGRkehgzmwbm0aLRU0A46zJkWyTNQXmfc5HuoW7F5b7PNAmlQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1mn6cswjuz07y3ll7lg959xegh05xf6ytemadgv7k4p09qlwz5fcsuaazdd
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-24T02:45:26Z"
+    mac: ENC[AES256_GCM,data:/0+Gi4+an8Pl+/CebGzFysf3vnfDxYOBEG9phj+1BQVaAD67V4L1ngNvVXoeSraq7EqgosEytH+bSlH6bhTaNHl/YPL+FnRL8q0raVldv6Bw+cwF7VlO/p7fkuj2hZNSo+8TMWEx5aCL299jSNXm84OQuckC9/dQrGXuU1dZRus=,iv:VC4zoD/7aovaZvOjphZwjXaXS7CSu2/yBCy0M0bQeZQ=,tag:Znm2WfwIvoufIYEBLOiw1g==,type:str]
+    version: 3.13.3
