@@ -18,3 +18,4 @@ of truth: the cluster is changed by committing here.
 - [Nodes](docs/nodes.md): hardware, VM sizes, resizing
 - [Networking](docs/networking.md): Tailscale, reaching services
 - [Bootstrap](docs/bootstrap.md): building the cluster from nothing
+- [Cheatsheet](docs/cheatsheet.md): everyday Lima, kubectl and Flux commands
