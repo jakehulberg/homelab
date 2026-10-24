@@ -27,16 +27,20 @@ browser
 
 | Piece | Where it comes from |
 |---|---|
-| Gateway API CRDs (`v1.6.3`) | `infrastructure/gateway-api/`, from the Gateway API release. The Traefik chart doesn't include them. |
-| Traefik, its `LoadBalancer` Service, GatewayClass `traefik`, Gateway `traefik-gateway` | `infrastructure/traefik/`, Traefik Helm chart `42.1.3`. Ports, Service type, GatewayClass and Gateway are chart defaults. |
+| Gateway API CRDs (`v1.6.3`) | `infrastructure/controllers/gateway-api/`, from the Gateway API release. The Traefik chart doesn't include them. |
+| Traefik, its `LoadBalancer` Service, GatewayClass `traefik`, Gateway `traefik-gateway` | `infrastructure/controllers/traefik/`, Traefik Helm chart `42.1.3`. Ports, Service type, GatewayClass and Gateway are chart defaults. |
 | HTTPRoutes | Each app's folder, e.g. `apps/podinfo/httproute.yaml` |
 
 - `LoadBalancer` services use k3s's built-in ServiceLB, which listens on each node's Tailscale IP.
   MetalLB is not used, since it needs a shared layer 2 network.
 - The Gateway accepts routes from any namespace (`namespacePolicy: from: All`).
-- HTTP only for now. HTTPS comes with cert-manager.
-- Hostnames use `nip.io` until a real domain is set up: `<app>.100.102.222.95.nip.io` resolves to
-  k3s-mini2's Tailscale IP.
+- Hostnames are `<app>.home.jakehulberg.com`. A wildcard DNS record in Cloudflare points every
+  name under `home.jakehulberg.com` at the four node Tailscale IPs, so a new app needs no DNS
+  change. See [certificates](certificates.md).
+- HTTP only for now. The wildcard certificate is issued; the Gateway's HTTPS listener isn't added
+  yet.
+- podinfo still uses the earlier `nip.io` name (`podinfo.100.102.222.95.nip.io`, which resolves
+  to k3s-mini2's Tailscale IP).
 - Everything is reachable from devices on the tailnet. Public exposure (for demos) is a later
   decision: Tailscale Funnel or Cloudflare Tunnel.
 
@@ -55,7 +59,7 @@ spec:
     - name: traefik-gateway
       namespace: traefik
   hostnames:
-    - <app>.100.102.222.95.nip.io
+    - <app>.home.jakehulberg.com
   rules:
     - backendRefs:
         - name: <app-service>
