@@ -4,14 +4,15 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
 
 ## Build order
 
-1. **Cluster:** k3s in Lima VMs on the 3 minis (servers) plus the Pi (agent), networked over
+1. ✅ **Cluster:** k3s in Lima VMs on the 3 minis (servers) plus the Pi (agent), networked over
    Tailscale. See [nodes](docs/nodes.md), [networking](docs/networking.md), [bootstrap](docs/bootstrap.md).
-2. **Flux:** `flux bootstrap github` pointed at this repo.
+2. ✅ **Flux:** `flux bootstrap github` pointed at this repo. Repo split into `infrastructure/` and
+   `apps/` ([gitops](docs/gitops.md)); podinfo deployed as a smoke test.
 3. **Core infra:**
    - Traefik (ingress: routes hostnames to services, handles HTTPS)
    - cert-manager (TLS certificates)
    - Storage: Longhorn or local-path
-   - SOPS (encrypts bootstrap secrets in git)
+   - ✅ SOPS (encrypts bootstrap secrets in git, [secrets](docs/secrets.md))
 4. **Infisical:** migrate from mini3.
    - `pg_dump` the existing database, restore into the cluster.
    - Bootstrap secrets (Postgres, Redis, encryption key) come from SOPS, not Infisical.
