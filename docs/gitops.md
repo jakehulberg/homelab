@@ -57,6 +57,37 @@ Infrastructure works the same way under `infrastructure/`.
 Delete its line from `apps/kustomization.yaml` and push. `prune: true` makes Flux delete everything
 it created. The folder can stay in the repo for later.
 
+## Helm charts from OCI registries
+
+Charts pulled with an `OCIRepository` (`oci://...`) need a `layerSelector`. Some chart artifacts
+(Traefik's, for one) carry extra layers like signatures, and without it Flux tries to unpack the
+wrong one and fails with `gzip: invalid header`.
+
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+spec:
+  url: oci://ghcr.io/<org>/<chart>
+  ref:
+    tag: "<exact version>"
+  layerSelector:
+    mediaType: "application/vnd.cncf.helm.chart.content.v1.tar+gzip"
+    operation: copy
+```
+
+Change chart settings with `values` in the HelmRelease, not by copying the chart. To see every
+setting and its default: `helm show values oci://ghcr.io/<org>/<chart> --version <version>`.
+
+## Troubleshooting
+
+- **Pushed a file, `kubectl get` says `No resources found`:** the file isn't listed in its folder's
+  `kustomization.yaml`.
+- **A Kustomization is stuck on `Reconciliation in progress`:** `infrastructure` has `wait: true`,
+  so it waits on every HelmRelease in it. `flux get helmreleases -A` shows which one, and its
+  message says why.
+- **`apps` says `dependency 'flux-system/infrastructure' is not ready`:** fix `infrastructure`
+  first; `apps` follows.
+
 ## Apply now instead of waiting
 
 ```sh
