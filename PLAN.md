@@ -12,7 +12,7 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
    - ✅ Traefik with Gateway API (routes hostnames to services; HTTPS once cert-manager is in),
      [networking](docs/networking.md)
    - ✅ cert-manager: wildcard Let's Encrypt certificate for `*.home.jakehulberg.com` via
-     Cloudflare DNS, [certificates](docs/certificates.md). HTTPS listener on the Gateway still to do.
+     Cloudflare DNS, [certificates](docs/certificates.md). Gateway serves HTTPS with it.
    - Storage: Longhorn or local-path
    - ✅ SOPS (encrypts bootstrap secrets in git, [secrets](docs/secrets.md))
 4. **Infisical:** migrate from mini3.
