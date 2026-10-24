@@ -4,7 +4,7 @@
 |---|---|---|---|---|---|
 | k3s-mini1 | mini1 (Lima VM) | server | 4 | 6GiB | 15GiB |
 | k3s-mini2 | mini2 (Lima VM) | server | 6 | 10GiB | 50GiB |
-| k3s-mini3 | mini3 (Lima VM) | server | 6 | 8GiB (10GiB later) | 35GiB |
+| k3s-mini3 | mini3 (Lima VM) | server | 6 | 8GiB | 35GiB |
 | pi | Raspberry Pi 5 (bare metal) | agent | 4 | all | SD/SSD |
 
 Servers run the control plane (API server, scheduler, embedded etcd) and also run workloads.
@@ -21,13 +21,13 @@ All three minis are Apple M4 (4 performance + 6 efficiency cores), 16GB RAM, 228
 |---|---|---|---|
 | mini1 | Daily software development | 10GB | 38GB |
 | mini2 | Mostly idle | 6GB | 74GB |
-| mini3 | Runs Infisical in Docker until it moves into the cluster | 8GB | 54GB |
+| mini3 | Runs the demo Infisical instance in Docker (stays outside the cluster) | 8GB | 54GB |
 
 Other VMs already on the hosts, counted against the "RAM left" column:
 
 - mini1: Docker Desktop VM (~1.7GB)
 - mini2: two Virtualization.framework VMs (~1.6GB)
-- mini3: Docker Desktop VM running Infisical (~5GB). Raise k3s-mini3 to 10GiB after the migration.
+- mini3: Docker Desktop VM running the demo Infisical (~5GB). It stays, so k3s-mini3 stays at 8GiB.
 
 ## Resizing a VM
 
