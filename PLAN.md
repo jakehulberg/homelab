@@ -9,7 +9,8 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
 2. ✅ **Flux:** `flux bootstrap github` pointed at this repo. Repo split into `infrastructure/` and
    `apps/` ([gitops](docs/gitops.md)); podinfo deployed as a smoke test.
 3. **Core infra:**
-   - Traefik (ingress: routes hostnames to services, handles HTTPS)
+   - ✅ Traefik with Gateway API (routes hostnames to services; HTTPS once cert-manager is in),
+     [networking](docs/networking.md)
    - cert-manager (TLS certificates)
    - Storage: Longhorn or local-path
    - ✅ SOPS (encrypts bootstrap secrets in git, [secrets](docs/secrets.md))
