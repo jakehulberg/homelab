@@ -36,4 +36,11 @@ spec:
         web:
           namespacePolicy:
             from: All          # let routes in any namespace (like podinfo) use this Gateway
+        websecure:
+          port: 8443
+          protocol: HTTPS
+          namespacePolicy:
+            from: All  
+          certificateRefs:
+           - name: home-wildcard-tls   
 
