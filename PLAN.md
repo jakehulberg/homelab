@@ -15,10 +15,10 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
      Cloudflare DNS, [certificates](docs/certificates.md). Gateway serves HTTPS with it.
    - Storage: Longhorn or local-path
    - ✅ SOPS (encrypts bootstrap secrets in git, [secrets](docs/secrets.md))
-4. **Infisical:** migrate from mini3.
-   - `pg_dump` the existing database, restore into the cluster.
+4. **Infisical:** a fresh, stock instance in the cluster.
    - Bootstrap secrets (Postgres, Redis, encryption key) come from SOPS, not Infisical.
-   - Cut DNS over once verified. Keep mini3 running until then.
+   - The demo instance (dummy data for videos) stays in Docker on mini3 and is not managed by
+     this repo.
 5. **Infisical Operator:** all apps from here on pull secrets from Infisical.
 6. **Authentik:** SSO for everything, including Infisical's login.
 7. **Apps:** see below.
