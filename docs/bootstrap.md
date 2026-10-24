@@ -164,12 +164,71 @@ Switch clusters with `kubectl config use-context <name>`; list them with `kubect
 
 ## 8. Flux
 
+From your laptop, in this repo, with `kubectl` on the `homelab` context.
+
+**a. Install the CLI and check the cluster:**
+
 ```sh
+brew install fluxcd/tap/flux
+flux check --pre
+```
+
+**b. Bootstrap.** This installs Flux into the cluster, commits its manifests to
+`clusters/homelab/flux-system/`, and adds a deploy key to the GitHub repo so the cluster can pull it.
+
+```sh
+export GITHUB_TOKEN=$(gh auth token)
 flux bootstrap github \
   --owner=jakehulberg \
   --repository=homelab-private \
   --private --personal \
   --path=clusters/homelab
+git pull
+```
+
+**c. Check:**
+
+```sh
+flux check                    # ends with "all checks passed"
+flux get kustomizations       # flux-system, infrastructure, apps all READY True
 ```
 
 From here on, the cluster is changed by committing to this repo.
+
+## 9. SOPS key
+
+Flux decrypts the encrypted secrets in this repo with an age private key, which the cluster reads
+from the `sops-age` Secret. That Secret is the one thing never stored in git, so recreate it on
+every rebuild.
+
+**First time only: make the key.**
+
+```sh
+brew install sops age
+age-keygen -o /tmp/age.txt
+```
+
+- The `# public key: age1...` line goes in `.sops.yaml` (safe to commit).
+- The `AGE-SECRET-KEY-1...` line goes in Infisical as `SOPS_AGE_KEY` (env `dev`, folder
+  `/homelab`), with a second copy in a password manager. Infisical runs on this cluster, so it
+  can't be the only copy.
+- Then `rm /tmp/age.txt`.
+
+**Every rebuild: give the key to the cluster.**
+
+First check the key comes back. If this prints nothing, the next command would create an empty
+Secret and decryption fails.
+
+```sh
+infisical secrets get SOPS_AGE_KEY --plain --env=dev --path=/homelab
+```
+
+Then:
+
+```sh
+infisical secrets get SOPS_AGE_KEY --plain --env=dev --path=/homelab \
+  | kubectl create secret generic sops-age -n flux-system --from-file=age.agekey=/dev/stdin
+flux reconcile kustomization apps --with-source
+```
+
+See [secrets](secrets.md) for adding encrypted secrets.
