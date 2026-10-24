@@ -14,19 +14,33 @@ Two kinds of secrets, for two jobs:
 - Encrypting only needs the public key (in `.sops.yaml`), so anyone with the repo can add a secret.
 - Decrypting needs the private key: Flux has it in the `sops-age` Secret
   ([bootstrap step 9](bootstrap.md#9-sops-key)), and you have it in Infisical as `SOPS_AGE_KEY`.
-- Both the `infrastructure` and `apps` Flux Kustomizations have `decryption` turned on.
+- The `infrastructure`, `infra-configs` and `apps` Flux Kustomizations all have `decryption`
+  turned on.
+
+## Secrets in the repo
+
+| File | What | Source |
+|---|---|---|
+| `infrastructure/configs/cloudflare-api-token.sops.yaml` | Cloudflare token for cert-manager ([certificates](certificates.md)) | Infisical `CLOUDFLARE_API_TOKEN` |
 
 ## Add a secret
 
 From the repo root. The file name must end in `.sops.yaml`.
 
-**a. Write the Secret** (without saving it to shell history in plain text: `--from-file` or
-`read -s` work too):
+**a. Write the Secret.** For a value stored in Infisical, pipe it in so it never shows on screen
+or in shell history:
 
 ```sh
-kubectl create secret generic my-secret -n my-app --from-literal=password=hunter2 \
-  --dry-run=client -o yaml > apps/my-app/my-secret.sops.yaml
+infisical secrets get MY_SECRET --plain --env=dev --path=/homelab | tr -d '\n' \
+  | kubectl create secret generic my-secret -n my-app --from-file=password=/dev/stdin \
+    --dry-run=client -o yaml > apps/my-app/my-secret.sops.yaml
 ```
+
+- `tr -d '\n'` strips the newline `infisical secrets get --plain` adds at the end. Without it the
+  newline ends up inside the Secret, and many apps reject the value.
+- If `infisical` fails, it pipes nothing and you get an empty Secret. Check the value isn't empty
+  after encrypting (the `ENC[AES256_GCM,data:...` part should have characters after `data:`).
+- The file is plain text until step b, so run b immediately.
 
 **b. Encrypt it in place** before it's ever committed:
 
