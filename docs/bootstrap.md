@@ -37,8 +37,12 @@ limactl copy k3s/config.yaml k3s/server.yaml k3s-mini1:/tmp/
 limactl shell k3s-mini1 sudo sh -c '
   mkdir -p /etc/rancher/k3s/config.yaml.d &&
   cp /tmp/config.yaml /etc/rancher/k3s/config.yaml &&
-  cp /tmp/server.yaml /etc/rancher/k3s/config.yaml.d/server.yaml'
+  cp /tmp/server.yaml /etc/rancher/k3s/config.yaml.d/server.yaml &&
+  printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/rancher/k3s/resolv.conf'
 ```
+
+The last line is the DNS file `config.yaml` points k3s at, so pods don't inherit Tailscale's and
+the router's search domains ([networking](networking.md#dns-inside-the-cluster)).
 
 ## 5. Install k3s
 
@@ -102,6 +106,7 @@ Only `config.yaml`. `server.yaml` is for the minis.
 ```sh
 sudo mkdir -p /etc/rancher/k3s
 sudo mv /tmp/config.yaml /etc/rancher/k3s/config.yaml
+sudo sh -c 'printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/rancher/k3s/resolv.conf'
 ```
 
 **d. Set the token.** On the Pi. Paste it and press Enter; nothing shows on screen.
