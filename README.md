@@ -27,5 +27,6 @@ of truth: the cluster is changed by committing here.
 - [Storage](docs/storage.md): local-path volumes, CloudNativePG databases, backups
 - [Infisical](docs/infisical.md): the cluster's Infisical, how it's wired, first boot
 - [Certificates](docs/certificates.md): HTTPS for `*.home.jakehulberg.com` via cert-manager and Let's Encrypt
+- [Incidents](docs/incidents/): what broke, why, and what changed
 - [Cheatsheet](docs/cheatsheet.md): everyday Lima, kubectl and Flux commands
 - [Learning](learning/README.md): reading list for the concepts behind this repo
