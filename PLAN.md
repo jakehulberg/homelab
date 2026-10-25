@@ -35,9 +35,8 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
   (Lima autostart may need the VM's user logged in).
 - **Restore drill:** restore `infisical-db` from R2 into a new Cluster and point a test Infisical at
   it, to prove backups actually work ([storage](docs/storage.md#restore-not-yet-tested)).
-- **Direct Tailscale paths:** k3s-mini2 and k3s-mini3 only reach the tailnet through Tailscale's
-  relay (`tailscale ping` shows `via DERP`), which adds latency and caused a database failover.
-  Likely Lima's default VM networking; try `vzNAT`.
+- **Ethernet for the minis:** direct paths now (vzNAT), but Wi-Fi latency between nodes is
+  60 to 280ms with spikes. Wiring them would cut that and allow bridged networking.
 
 ## Apps
 
