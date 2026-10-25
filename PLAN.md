@@ -13,9 +13,11 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
      [networking](docs/networking.md)
    - ✅ cert-manager: wildcard Let's Encrypt certificate for `*.home.jakehulberg.com` via
      Cloudflare DNS, [certificates](docs/certificates.md). Gateway serves HTTPS with it.
-   - Storage: Longhorn or local-path
+   - ✅ Storage: local-path volumes plus CloudNativePG for Postgres, [storage](docs/storage.md).
+     Backups to Cloudflare R2 still to do.
    - ✅ SOPS (encrypts bootstrap secrets in git, [secrets](docs/secrets.md))
-4. **Infisical:** a fresh, stock instance in the cluster.
+4. 🚧 **Infisical:** a fresh, stock instance in the cluster. Done: Postgres (`infisical-db`), Redis,
+   encrypted secrets. Next: the Infisical HelmRelease and its HTTPRoute.
    - Bootstrap secrets (Postgres, Redis, encryption key) come from SOPS, not Infisical.
    - The demo instance (dummy data for videos) stays in Docker on mini3 and is not managed by
      this repo.
