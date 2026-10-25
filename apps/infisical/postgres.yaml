@@ -21,3 +21,4 @@ spec:
       isWALArchiver: true #stream Every change log to r2 as it happens 
       parameters:
         barmanObjectName: r2   
+  primaryUpdateMethod: switchover
