@@ -22,6 +22,7 @@ Two kinds of secrets, for two jobs:
 | File | What | Source |
 |---|---|---|
 | `infrastructure/configs/cloudflare-api-token.sops.yaml` | Cloudflare token for cert-manager ([certificates](certificates.md)) | Infisical `CLOUDFLARE_API_TOKEN` |
+| `apps/infisical/r2-credentials.sops.yaml` | R2 keys for database backups ([storage](storage.md#backups)) | Infisical Cloud, env `dev`, folder `/homelab/r2` |
 | `apps/infisical/infisical-secrets.sops.yaml` | Infisical's `ENCRYPTION_KEY`, `AUTH_SECRET`, `REDIS_PASSWORD`, plus `REDIS_URL` and `SITE_URL` built from them | Infisical Cloud, env `dev`, folder `/homelab/infisical` |
 
 Database passwords are not in this list: CloudNativePG generates them in the cluster
@@ -54,7 +55,7 @@ kubectl create secret generic infisical-secrets -n infisical \
   --from-literal=ENCRYPTION_KEY="$ENCRYPTION_KEY" \
   --from-literal=AUTH_SECRET="$AUTH_SECRET" \
   --from-literal=REDIS_PASSWORD="$REDIS_PASSWORD" \
-  --from-literal=REDIS_URL="redis://:$REDIS_PASSWORD@redis.infisical.svc.cluster.local:6379" \
+  --from-literal=REDIS_URL="redis://:$REDIS_PASSWORD@redis:6379" \
   --from-literal=SITE_URL="https://infisical.home.jakehulberg.com" \
   --dry-run=client -o yaml' > apps/infisical/infisical-secrets.sops.yaml
 sops -e -i apps/infisical/infisical-secrets.sops.yaml
