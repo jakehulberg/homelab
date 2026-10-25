@@ -21,7 +21,7 @@ full. k3s-mini1's VM disk is only 15GiB, so keep an eye on databases that land t
 
 | Database | App | Namespace | Instances | Backups |
 |---|---|---|---|---|
-| `infisical-db` | Infisical | `infisical` | 2 | None yet (planned: Cloudflare R2) |
+| `infisical-db` | Infisical | `infisical` | 2 | R2 `s3://homelab-postgres-backups/infisical`, continuous + daily 03:00, 30 days |
 
 The demo Infisical on mini3 (Docker) has its own Postgres outside the cluster and isn't covered
 here.
@@ -38,10 +38,110 @@ encrypted connections and replication.
 
 ## Backups
 
-Not set up yet. A second instance only protects against a node dying; a deleted database or a bad
-prune takes the copy with it. Plan: CloudNativePG continuous backups (nightly base backup plus
-write-ahead logs, so restore to any minute) to Cloudflare R2, set up before any app with data worth
-keeping goes in.
+A second instance only protects against a node dying. A deleted database or a bad prune takes the
+copy with it, so every database also backs up off-site to Cloudflare R2.
+
+### How
+
+- **Barman Cloud plugin** (`infrastructure/controllers/cloudnative-pg/barman-cloud.yaml`, chart
+  `0.8.1`) does the copying. It adds a helper container to each Postgres pod, which is why database
+  pods show `2/2`. CloudNativePG's built-in backup support is deprecated since 1.26 in favor of this
+  plugin.
+- **Continuous:** every write-ahead log file (Postgres's record of each change) is shipped to R2
+  within minutes.
+- **Daily:** a full base backup at 03:00 (`ScheduledBackup`).
+- **Restore** replays a base backup plus the logs after it, so any minute in the last 30 days.
+
+### R2
+
+- Bucket `homelab-postgres-backups`, Standard storage class (Infrequent Access charges for reads,
+  which the plugin does regularly). One folder per app.
+- Access: an R2 Account API token named `homelab cnpg backups`, Object Read & Write on that bucket
+  only, no expiry. Its S3 keys are in Infisical Cloud, env `dev`, folder `/homelab/r2`
+  (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`).
+- Endpoint: `https://e8dc2af5d31bf4e016b6fab1e2515a27.r2.cloudflarestorage.com`.
+- Cost: inside R2's free tier (10GB) for databases this size.
+
+### Per database (`apps/<app>/`)
+
+| File | What |
+|---|---|
+| `r2-credentials.sops.yaml` | The R2 keys as a Secret in the app's namespace (Secrets can't be shared across namespaces) |
+| `objectstore.yaml` | `ObjectStore` named `r2`: bucket folder, endpoint, credentials, `retentionPolicy: "30d"` |
+| `postgres.yaml` | The `Cluster` gets `plugins: barman-cloud.cloudnative-pg.io` with `isWALArchiver: true` and `barmanObjectName: r2` |
+| `scheduled-backup.yaml` | `ScheduledBackup`, schedule `"0 0 3 * * *"` (this format starts with a seconds field) |
+
+Build the credentials file from the repo root:
+
+```sh
+infisical run --env=dev --path=/homelab/r2 -- sh -c '
+kubectl create secret generic r2-credentials -n <namespace> \
+  --from-literal=ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" \
+  --from-literal=ACCESS_SECRET_KEY="$R2_SECRET_ACCESS_KEY" \
+  --dry-run=client -o yaml' > apps/<app>/r2-credentials.sops.yaml
+sops -e -i apps/<app>/r2-credentials.sops.yaml
+```
+
+### Check it
+
+```sh
+kubectl get cluster infisical-db -n infisical \
+  -o jsonpath='{range .status.conditions[*]}{.type}={.status}{"\n"}{end}'   # ContinuousArchiving=True
+kubectl get backup -n infisical                                             # PHASE completed
+```
+
+### Back up now
+
+```sh
+cat <<'YAML' | kubectl apply -f -
+apiVersion: postgresql.cnpg.io/v1
+kind: Backup
+metadata:
+  name: infisical-db-manual-$(date +%Y%m%d)
+  namespace: infisical
+spec:
+  cluster:
+    name: infisical-db
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+YAML
+```
+
+(Replace the name with something unique; the heredoc doesn't expand `$(date)`.)
+
+### Restore (not yet tested)
+
+Restoring creates a **new** Cluster from the backups. Sketch, per the plugin's docs:
+
+```yaml
+spec:
+  bootstrap:
+    recovery:
+      source: origin
+  externalClusters:
+    - name: origin
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: r2
+          serverName: infisical-db   # the original cluster's name, its folder in the bucket
+```
+
+Infisical also needs its original `ENCRYPTION_KEY` and `AUTH_SECRET` (in Infisical Cloud) to read
+a restored database. A restore drill belongs on the to-do list.
+
+## Restarts and failover
+
+- `primaryUpdateMethod: switchover` on each Cluster: when the primary needs restarting (a spec or
+  image change), CloudNativePG promotes the copy first, then restarts the old primary. The default,
+  `restart`, restarts the primary in place, so the database is down until it's back.
+- If the primary can't reach the Kubernetes API or the other instance for a while, it shuts itself
+  down on purpose so two primaries never write at once, and the copy takes over.
+- Turning on WAL archiving for a running cluster: the old primary can't archive without the plugin's
+  helper container, so its shutdown can hang for up to 30 minutes. Force-deleting that pod is safe
+  (Postgres recovers from abrupt stops, and the unarchived logs stay on disk):
+  `kubectl delete pod <pod> -n <namespace> --grace-period=0 --force`.
 
 ## Check it
 
