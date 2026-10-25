@@ -10,7 +10,7 @@ of truth: the cluster is changed by committing here.
 | `lima/` | VM definitions for the Mac minis |
 | `k3s/` | k3s config copied onto each node |
 | `clusters/homelab/` | Flux entrypoint: Flux itself plus pointers to the folders below |
-| `infrastructure/controllers/` | Shared software, applied first (Gateway API, Traefik, cert-manager) |
+| `infrastructure/controllers/` | Shared software, applied first (Gateway API, Traefik, cert-manager, CloudNativePG) |
 | `infrastructure/configs/` | Their configuration, applied second (Let's Encrypt issuer, certificate) |
 | `apps/` | Apps, applied last |
 | `.sops.yaml` | Which files SOPS encrypts, and with which public key |
@@ -24,6 +24,7 @@ of truth: the cluster is changed by committing here.
 - [Bootstrap](docs/bootstrap.md): building the cluster from nothing
 - [GitOps](docs/gitops.md): how Flux reads this repo, adding and removing apps
 - [Secrets](docs/secrets.md): encrypting secrets with SOPS
+- [Storage](docs/storage.md): local-path volumes, CloudNativePG databases, backups
 - [Certificates](docs/certificates.md): HTTPS for `*.home.jakehulberg.com` via cert-manager and Let's Encrypt
 - [Cheatsheet](docs/cheatsheet.md): everyday Lima, kubectl and Flux commands
 - [Learning](learning/README.md): reading list for the concepts behind this repo
