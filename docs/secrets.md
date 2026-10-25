@@ -22,6 +22,46 @@ Two kinds of secrets, for two jobs:
 | File | What | Source |
 |---|---|---|
 | `infrastructure/configs/cloudflare-api-token.sops.yaml` | Cloudflare token for cert-manager ([certificates](certificates.md)) | Infisical `CLOUDFLARE_API_TOKEN` |
+| `apps/infisical/infisical-secrets.sops.yaml` | Infisical's `ENCRYPTION_KEY`, `AUTH_SECRET`, `REDIS_PASSWORD`, plus `REDIS_URL` and `SITE_URL` built from them | Infisical Cloud, env `dev`, folder `/homelab/infisical` |
+
+Database passwords are not in this list: CloudNativePG generates them in the cluster
+([storage](storage.md#credentials)).
+
+Every secret here also lives in Infisical Cloud, which is the source of truth. The plan is to
+replace these SOPS copies with the Infisical Operator syncing from Cloud (see `PLAN.md`, step 5).
+
+### Infisical's own keys
+
+`ENCRYPTION_KEY` and `AUTH_SECRET` encrypt everything stored in the cluster's Infisical. Lose them
+and even a perfect database backup is unreadable, so the copy in Infisical Cloud matters.
+
+They were generated straight into Cloud, never shown on screen:
+
+```sh
+infisical secrets folders create --name infisical --path /homelab --env=dev
+infisical secrets set --env=dev --path=/homelab/infisical \
+  ENCRYPTION_KEY=$(openssl rand -hex 16) \
+  AUTH_SECRET=$(openssl rand -base64 32) \
+  REDIS_PASSWORD=$(openssl rand -hex 24)
+```
+
+and turned into the SOPS file from the repo root, passing values only through environment
+variables:
+
+```sh
+infisical run --env=dev --path=/homelab/infisical -- sh -c '
+kubectl create secret generic infisical-secrets -n infisical \
+  --from-literal=ENCRYPTION_KEY="$ENCRYPTION_KEY" \
+  --from-literal=AUTH_SECRET="$AUTH_SECRET" \
+  --from-literal=REDIS_PASSWORD="$REDIS_PASSWORD" \
+  --from-literal=REDIS_URL="redis://:$REDIS_PASSWORD@redis.infisical.svc.cluster.local:6379" \
+  --from-literal=SITE_URL="https://infisical.home.jakehulberg.com" \
+  --dry-run=client -o yaml' > apps/infisical/infisical-secrets.sops.yaml
+sops -e -i apps/infisical/infisical-secrets.sops.yaml
+```
+
+Never regenerate `ENCRYPTION_KEY` once Infisical has data; rerun only the second command to rebuild
+the file.
 
 ## Add a secret
 
