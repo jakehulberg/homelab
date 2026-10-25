@@ -4,3 +4,5 @@
 
 # All node-to-node traffic goes over Tailscale (the minis are on Wi-Fi, so no bridged networking).
 flannel-iface: tailscale0
+resolv-conf: /etc/rancher/k3s/resolv.conf   # DNS for pods: public servers only, no Tailscale or router search domains
+
