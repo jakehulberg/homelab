@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: infisical
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: infisical-db
+  namespace: infisical
+spec:
+  instances: 2          # a primary plus a live copy on another node
+  storage:
+    size: 5Gi           # on local-path, the k3s default
+  bootstrap:
+    initdb:
+      database: infisical
+      owner: infisical  # CloudNativePG creates this user and stores its password in a Secret
+
