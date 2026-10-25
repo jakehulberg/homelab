@@ -1,0 +1,27 @@
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalConnection
+metadata:
+  name: infisical-cloud
+  namespace: infisical-operator-system
+spec:
+  address: https://app.infisical.com
+---
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalAuth
+metadata:
+  name: homelab-cluster
+  namespace: infisical-operator-system
+spec:
+  infisicalConnectionRef:
+    name: infisical-cloud
+    namespace: infisical-operator-system
+  method: universal
+  universal:
+    clientIdRef:
+      name: infisical-universal-auth
+      namespace: infisical-operator-system
+      key: clientId
+    clientSecretRef:
+      name: infisical-universal-auth
+      namespace: infisical-operator-system
+      key: clientSecret

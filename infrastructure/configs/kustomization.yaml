@@ -4,4 +4,6 @@ resources:
   - cloudflare-api-token.sops.yaml
   - cluster-issuer.yaml
   - certificate.yaml
-  
+  - infisical-cloud.yaml
+  - infisical-universal-auth.sops.yaml
+
