@@ -111,7 +111,29 @@ Tip: in-cluster addresses resolve fastest as the short Service name from the sam
 - etcd runs over Wi-Fi plus Tailscale, which adds latency. Fine for a homelab; if etcd complains,
   moving the minis to ethernet is the fix.
 - If Tailscale is down, the cluster network is down.
-- k3s-mini2 and k3s-mini3 currently reach the tailnet only through Tailscale's relay
-  (`tailscale ping k3s-mini2` shows `via DERP(dfw)`), not directly. That adds latency and short
-  drops, which once made the database primary shut itself down and fail over. Likely Lima's default
-  VM networking; on the to-do list in `PLAN.md`.
+- Node-to-node latency is Wi-Fi latency: direct paths between minis measure roughly 60 to 280ms,
+  with spikes. Ethernet would fix that (and allow bridged networking).
+
+## Lima VM networking: vzNAT
+
+Each VM uses Apple's VM NAT (`networks: - vzNAT: true` in `lima/`). Lima's default user-mode
+network is a "hard" NAT: it gives each destination a different outside port, so Tailscale can't
+connect two VMs directly and relays all node-to-node traffic through its servers (Dallas), adding
+latency and drops. That once made the database primary shut itself down
+([incident](incidents/2026-10-25-infisical-db-failover.md)). vzNAT also gives the VMs IPv6, which
+Tailscale uses for direct paths.
+
+Check a VM, then a path (on the mini that owns the VM):
+
+```sh
+limactl shell k3s-mini2 tailscale netcheck        # MappingVariesByDestIP: false
+limactl shell k3s-mini2 tailscale ping k3s-mini1  # "via <IP>:<port>", not "via DERP(...)"
+```
+
+Adding it to an existing VM, one node at a time (drain from the laptop first, see
+[nodes](nodes.md#taking-a-node-down)):
+
+```sh
+limactl stop k3s-mini2
+limactl edit k3s-mini2 --set '.networks += [{"vzNAT": true}]'   # answer yes to start it
+```
