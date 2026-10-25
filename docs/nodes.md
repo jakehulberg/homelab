@@ -31,14 +31,41 @@ Other VMs already on the hosts, counted against the "RAM left" column:
   other demo containers (~5GB in use). With k3s-mini3 at 6GiB, that leaves macOS about 4GB.
   Before the cap, Docker was allowed 11.7GB, which with an 8GiB k3s VM overcommitted the 16GB host.
 
-## Resizing a VM
+## Taking a node down
+
+For a VM resize, a network change, or a reboot. **One node at a time:** the three minis each hold
+a copy of etcd, and the cluster needs two of three up.
+
+**1. Laptop: move a database primary off the node, if it has one.** CloudNativePG won't let a
+drain evict a primary.
+
+```sh
+kubectl get cluster -A                                        # PRIMARY column
+brew install kubectl-cnpg                                     # once
+kubectl cnpg promote infisical-db infisical-db-2 -n infisical # promote the copy on another node
+kubectl get cluster infisical-db -n infisical                 # wait for "Cluster in healthy state"
+```
+
+**2. Laptop: drain.** Pods move elsewhere, except database instances whose data lives on this
+node; they wait as Pending until it's back.
 
 ```sh
 kubectl drain k3s-mini3 --ignore-daemonsets --delete-emptydir-data
+```
+
+**3. On the mini, as the user that owns the VM** (`theodorecomputeiii` on mini1, `mini-2`,
+`mini3`):
+
+```sh
 limactl stop k3s-mini3
-limactl edit k3s-mini3 --memory 10   # GiB; also --cpus, --disk
-limactl start k3s-mini3
+limactl edit k3s-mini3 --memory 10   # GiB; also --cpus, --disk; answer yes to start it
+```
+
+**4. Laptop: bring it back** once `kubectl get nodes` shows it `Ready`:
+
+```sh
 kubectl uncordon k3s-mini3
+kubectl get cluster -A               # databases back to all instances ready
 ```
 
 Update the matching file in `lima/` so the repo stays the source of truth.
