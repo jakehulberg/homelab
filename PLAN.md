@@ -13,11 +13,11 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
      [networking](docs/networking.md)
    - ✅ cert-manager: wildcard Let's Encrypt certificate for `*.home.jakehulberg.com` via
      Cloudflare DNS, [certificates](docs/certificates.md). Gateway serves HTTPS with it.
-   - ✅ Storage: local-path volumes plus CloudNativePG for Postgres, [storage](docs/storage.md).
-     Backups to Cloudflare R2 still to do.
+   - ✅ Storage: local-path volumes plus CloudNativePG for Postgres, backed up continuously to
+     Cloudflare R2, [storage](docs/storage.md).
    - ✅ SOPS (encrypts bootstrap secrets in git, [secrets](docs/secrets.md))
 4. ✅ **Infisical:** a fresh, stock instance at `https://infisical.home.jakehulberg.com`,
-   [infisical](docs/infisical.md). Backups still to do.
+   [infisical](docs/infisical.md). Database backed up to R2.
    - Bootstrap secrets (Postgres, Redis, encryption key) come from SOPS, not Infisical.
    - The demo instance (dummy data for videos) stays in Docker on mini3 and is not managed by
      this repo.
@@ -33,6 +33,8 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
 
 - **Power-loss test:** reboot one mini without logging in, and confirm its node comes back `Ready`
   (Lima autostart may need the VM's user logged in).
+- **Restore drill:** restore `infisical-db` from R2 into a new Cluster and point a test Infisical at
+  it, to prove backups actually work ([storage](docs/storage.md#restore-not-yet-tested)).
 - **Direct Tailscale paths:** k3s-mini2 and k3s-mini3 only reach the tailnet through Tailscale's
   relay (`tailscale ping` shows `via DERP`), which adds latency and caused a database failover.
   Likely Lima's default VM networking; try `vzNAT`.
