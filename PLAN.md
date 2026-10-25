@@ -29,6 +29,14 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
 6. **Authentik:** SSO for everything, including Infisical's login.
 7. **Apps:** see below.
 
+## To do
+
+- **Power-loss test:** reboot one mini without logging in, and confirm its node comes back `Ready`
+  (Lima autostart may need the VM's user logged in).
+- **Direct Tailscale paths:** k3s-mini2 and k3s-mini3 only reach the tailnet through Tailscale's
+  relay (`tailscale ping` shows `via DERP`), which adds latency and caused a database failover.
+  Likely Lima's default VM networking; try `vzNAT`.
+
 ## Apps
 
 - draw.io
