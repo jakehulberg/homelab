@@ -13,7 +13,8 @@ clusters/homelab/
   apps.yaml             "apply ./apps, once configs are healthy"
 
 infrastructure/
-  controllers/          software everything else needs: Gateway API types, Traefik, cert-manager
+  controllers/          software everything else needs: Gateway API types, Traefik, cert-manager,
+                        CloudNativePG
     kustomization.yaml  table of contents: which subfolders to include
     <component>/
       kustomization.yaml  which files in this folder to include
