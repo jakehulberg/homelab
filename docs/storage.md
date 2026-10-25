@@ -97,7 +97,7 @@ cat <<'YAML' | kubectl apply -f -
 apiVersion: postgresql.cnpg.io/v1
 kind: Backup
 metadata:
-  name: infisical-db-manual-$(date +%Y%m%d)
+  name: infisical-db-manual-20261025   # any unique name
   namespace: infisical
 spec:
   cluster:
@@ -107,8 +107,6 @@ spec:
     name: barman-cloud.cloudnative-pg.io
 YAML
 ```
-
-(Replace the name with something unique; the heredoc doesn't expand `$(date)`.)
 
 ### Restore (not yet tested)
 
