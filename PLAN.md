@@ -20,6 +20,10 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
    - The demo instance (dummy data for videos) stays in Docker on mini3 and is not managed by
      this repo.
 5. **Infisical Operator:** all apps from here on pull secrets from Infisical.
+   - Point it at Infisical Cloud (a machine identity with Universal Auth, available on the free
+     plan) so Cloud is the single source of truth. That removes the duplicate SOPS copies of
+     secrets that also live in Cloud (Cloudflare token, Infisical's own keys), leaving SOPS with
+     only the operator's identity credentials. Goal: no secret sprawl.
 6. **Authentik:** SSO for everything, including Infisical's login.
 7. **Apps:** see below.
 
