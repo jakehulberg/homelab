@@ -16,4 +16,8 @@ spec:
     initdb:
       database: infisical
       owner: infisical  # CloudNativePG creates this user and stores its password in a Secret
-
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true #stream Every change log to r2 as it happens 
+      parameters:
+        barmanObjectName: r2   
