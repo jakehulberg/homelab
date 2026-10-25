@@ -14,6 +14,12 @@ images:
 # No mounts, port forwarding or containerd. The node is reached over Tailscale.
 plain: true
 
+# Apple's VM NAT. Lima's default user-mode network is a "hard" NAT (Tailscale netcheck shows
+# MappingVariesByDestIP: true), which forces node-to-node traffic through Tailscale's relay servers.
+# With vzNAT, Tailscale connects the nodes directly.
+networks:
+  - vzNAT: true
+
 provision:
   - mode: system
     script: |
