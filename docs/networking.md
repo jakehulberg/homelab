@@ -79,8 +79,39 @@ kubectl get svc traefik -n traefik                       # 80:<nodeport>, extern
 helm get manifest traefik -n traefik                     # everything the chart created
 ```
 
+## DNS inside the cluster
+
+Pods get their DNS settings from k3s, which by default copies the node's. The nodes' settings
+include Tailscale's and the router's search domains (`tail00e871.ts.net`, `attlocal.net`), so pods
+looked up names like `redis.infisical.svc.cluster.local` by first asking those outside servers, and
+lookups took 0.3 to 5 seconds instead of milliseconds. Infisical couldn't reach Redis within its
+10-second connect timeout.
+
+Fix: every node has its own `/etc/rancher/k3s/resolv.conf` with only public DNS servers and no
+search domains, and `k3s/config.yaml` points k3s at it with `resolv-conf:`.
+
+```
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+```
+
+Pods' search list now stops at `cluster.local`, and CoreDNS forwards outside names to 1.1.1.1.
+Pods only pick this up when they're recreated. Check with a throwaway pod:
+
+```sh
+kubectl run dnscheck --rm -it --restart=Never --image=busybox:1.37 -- cat /etc/resolv.conf
+# search <ns>.svc.cluster.local svc.cluster.local cluster.local   (nothing after cluster.local)
+```
+
+Tip: in-cluster addresses resolve fastest as the short Service name from the same namespace
+(`redis`) or the full name (`redis.infisical.svc.cluster.local`).
+
 ## Tradeoffs
 
 - etcd runs over Wi-Fi plus Tailscale, which adds latency. Fine for a homelab; if etcd complains,
   moving the minis to ethernet is the fix.
 - If Tailscale is down, the cluster network is down.
+- k3s-mini2 and k3s-mini3 currently reach the tailnet only through Tailscale's relay
+  (`tailscale ping k3s-mini2` shows `via DERP(dfw)`), not directly. That adds latency and short
+  drops, which once made the database primary shut itself down and fail over. Likely Lima's default
+  VM networking; on the to-do list in `PLAN.md`.
