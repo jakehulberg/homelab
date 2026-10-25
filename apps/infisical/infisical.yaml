@@ -1,0 +1,41 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: infisical
+  namespace: infisical
+spec:
+  interval: 1h
+  url: https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: infisical
+  namespace: infisical
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: infisical-standalone
+      version: "1.11.1"
+      sourceRef:
+        kind: HelmRepository
+        name: infisical
+  values:
+    infisical:
+      replicaCount: 1                # chart default is 2 at up to 1GB each; one is plenty here
+      fullnameOverride: infisical    # otherwise the Service is "infisical-infisical-standalone-infisical"
+    postgresql:
+      enabled: false                 # use CloudNativePG instead of the bundled one
+      useExistingPostgresSecret:
+        enabled: true
+        existingConnectionStringSecret:
+          name: infisical-db-app     # the Secret CloudNativePG generated
+          key: uri
+    redis:
+      enabled: false                 # use our own Redis; REDIS_URL comes from infisical-secrets
+    ingress:
+      enabled: false                 # Traefik routes to it instead
+      nginx:
+        enabled: false               # and don't install the bundled ingress-nginx
+

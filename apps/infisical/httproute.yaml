@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: infisical
+  namespace: infisical
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+  hostnames:
+    - infisical.home.jakehulberg.com
+  rules:
+    - backendRefs:
+        - name: infisical
+          port: 8080
+
