@@ -33,9 +33,8 @@ Infisical pod took minutes to become ready. No data lost.
   ([networking](../networking.md#dns-inside-the-cluster)).
 - Infisical's `REDIS_URL` uses the short Service name `redis`.
 
-## Still open
-
-- Direct Tailscale connections for k3s-mini2 and k3s-mini3 (`PLAN.md`, To do).
+- Lima VMs switched to `vzNAT` networking so Tailscale connects nodes directly instead of through
+  its relay servers ([networking](../networking.md#lima-vm-networking-vznat)).
 
 ## Lessons
 
