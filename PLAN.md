@@ -16,8 +16,8 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
    - ✅ Storage: local-path volumes plus CloudNativePG for Postgres, [storage](docs/storage.md).
      Backups to Cloudflare R2 still to do.
    - ✅ SOPS (encrypts bootstrap secrets in git, [secrets](docs/secrets.md))
-4. 🚧 **Infisical:** a fresh, stock instance in the cluster. Done: Postgres (`infisical-db`), Redis,
-   encrypted secrets. Next: the Infisical HelmRelease and its HTTPRoute.
+4. ✅ **Infisical:** a fresh, stock instance at `https://infisical.home.jakehulberg.com`,
+   [infisical](docs/infisical.md). Backups still to do.
    - Bootstrap secrets (Postgres, Redis, encryption key) come from SOPS, not Infisical.
    - The demo instance (dummy data for videos) stays in Docker on mini3 and is not managed by
      this repo.
