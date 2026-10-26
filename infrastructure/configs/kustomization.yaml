@@ -6,4 +6,5 @@ resources:
   - certificate.yaml
   - infisical-cloud.yaml
   - infisical-universal-auth.sops.yaml
+  - cloudflare-token-sync.yaml
 
