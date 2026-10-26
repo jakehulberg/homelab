@@ -17,7 +17,7 @@ wildcard shows only `*.home.jakehulberg.com`.
 
 ```
 Cloudflare DNS: *.home.jakehulberg.com → 4 Tailscale IPs        (set by hand, once)
-Cloudflare API token (DNS edit, jakehulberg.com only)           (infrastructure/configs, SOPS)
+Cloudflare API token (DNS edit, jakehulberg.com only)           (Infisical Cloud, synced by the operator)
 cert-manager                                                    (infrastructure/controllers/cert-manager)
 ClusterIssuer letsencrypt: "get certs from Let's Encrypt,       (infrastructure/configs/cluster-issuer.yaml)
   prove ownership via Cloudflare DNS"
@@ -54,18 +54,12 @@ dig +short podinfo.home.jakehulberg.com   # should print the 4 Tailscale IPs
 - Cloudflare: My Profile → API Tokens → "Edit zone DNS" template, zone `jakehulberg.com` only,
   no expiration. Named `homelab cert-manager DNS-01`.
 - Infisical: `CLOUDFLARE_API_TOKEN` (homelab project, env `dev`, folder `/cert-manager`).
-- Cluster: `infrastructure/configs/cloudflare-api-token.sops.yaml`, a SOPS-encrypted Secret in the
-  `cert-manager` namespace.
+- Cluster: the Infisical Operator syncs `/cert-manager` into the Secret
+  `cert-manager/cloudflare-api-token-infisical` (`infrastructure/configs/cloudflare-token-sync.yaml`).
+  The ClusterIssuer reads its `CLOUDFLARE_API_TOKEN` key ([secrets](secrets.md)).
 
-To rotate it, update Infisical, then regenerate the file from the repo root. The `tr` matters:
-`infisical secrets get --plain` ends its output with a newline, which cert-manager rejects.
-
-```sh
-infisical secrets get CLOUDFLARE_API_TOKEN --plain --env=dev --path=/cert-manager | tr -d '\n' \
-  | kubectl create secret generic cloudflare-api-token -n cert-manager --from-file=api-token=/dev/stdin \
-    --dry-run=client -o yaml > infrastructure/configs/cloudflare-api-token.sops.yaml
-sops -e -i infrastructure/configs/cloudflare-api-token.sops.yaml
-```
+To rotate it, create a new token in Cloudflare and update the value in Infisical Cloud. The cluster
+picks it up within 60 seconds; then delete the old token in Cloudflare.
 
 ## Check it
 
@@ -97,9 +91,5 @@ kubectl delete challenge -n traefik --all    # cert-manager creates a fresh one 
 ```
 
 `infra-configs` has `wait: true`, so while a certificate is failing it holds new pushes until it
-times out (10 minutes). To get a fixed Secret in without waiting, apply it directly; Flux applies the
-same content when it catches up:
-
-```sh
-infisical run --env=dev --path=/ -- sops -d infrastructure/configs/<file>.sops.yaml | kubectl apply -f -
-```
+times out (10 minutes). A fix to the token itself doesn't need a push: update it in Infisical Cloud
+and the operator syncs it within 60 seconds.
