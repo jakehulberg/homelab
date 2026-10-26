@@ -22,8 +22,8 @@ Two kinds of secrets, for two jobs:
 | File | What | Source |
 |---|---|---|
 | `infrastructure/configs/cloudflare-api-token.sops.yaml` | Cloudflare token for cert-manager ([certificates](certificates.md)) | Infisical `CLOUDFLARE_API_TOKEN` |
-| `apps/infisical/r2-credentials.sops.yaml` | R2 keys for database backups ([storage](storage.md#backups)) | Infisical Cloud, env `dev`, folder `/homelab/r2` |
-| `apps/infisical/infisical-secrets.sops.yaml` | Infisical's `ENCRYPTION_KEY`, `AUTH_SECRET`, `REDIS_PASSWORD`, plus `REDIS_URL` and `SITE_URL` built from them | Infisical Cloud, env `dev`, folder `/homelab/infisical` |
+| `apps/infisical/r2-credentials.sops.yaml` | R2 keys for database backups ([storage](storage.md#backups)) | homelab project, env `dev`, folder `/r2` |
+| `apps/infisical/infisical-secrets.sops.yaml` | Infisical's `ENCRYPTION_KEY`, `AUTH_SECRET`, `REDIS_PASSWORD`, plus `REDIS_URL` and `SITE_URL` built from them | homelab project, env `dev`, folder `/infisical` |
 
 Database passwords are not in this list: CloudNativePG generates them in the cluster
 ([storage](storage.md#credentials)).
@@ -39,8 +39,8 @@ and even a perfect database backup is unreadable, so the copy in Infisical Cloud
 They were generated straight into Cloud, never shown on screen:
 
 ```sh
-infisical secrets folders create --name infisical --path /homelab --env=dev
-infisical secrets set --env=dev --path=/homelab/infisical \
+infisical secrets folders create --name infisical --path / --env=dev
+infisical secrets set --env=dev --path=/infisical \
   ENCRYPTION_KEY=$(openssl rand -hex 16) \
   AUTH_SECRET=$(openssl rand -base64 32) \
   REDIS_PASSWORD=$(openssl rand -hex 24)
@@ -50,7 +50,7 @@ and turned into the SOPS file from the repo root, passing values only through en
 variables:
 
 ```sh
-infisical run --env=dev --path=/homelab/infisical -- sh -c '
+infisical run --env=dev --path=/infisical -- sh -c '
 kubectl create secret generic infisical-secrets -n infisical \
   --from-literal=ENCRYPTION_KEY="$ENCRYPTION_KEY" \
   --from-literal=AUTH_SECRET="$AUTH_SECRET" \
@@ -72,7 +72,7 @@ From the repo root. The file name must end in `.sops.yaml`.
 or in shell history:
 
 ```sh
-infisical secrets get MY_SECRET --plain --env=dev --path=/homelab | tr -d '\n' \
+infisical secrets get MY_SECRET --plain --env=dev --path=/<folder> | tr -d '\n' \
   | kubectl create secret generic my-secret -n my-app --from-file=password=/dev/stdin \
     --dry-run=client -o yaml > apps/my-app/my-secret.sops.yaml
 ```
@@ -98,8 +98,8 @@ The values now read `ENC[...]`.
 Needs the private key, pulled from Infisical:
 
 ```sh
-infisical run --env=dev --path=/homelab -- sops apps/my-app/my-secret.sops.yaml          # edit
-infisical run --env=dev --path=/homelab -- sops -d apps/my-app/my-secret.sops.yaml       # print
+infisical run --env=dev --path=/ -- sops apps/my-app/my-secret.sops.yaml          # edit
+infisical run --env=dev --path=/ -- sops -d apps/my-app/my-secret.sops.yaml       # print
 ```
 
 ## Troubleshooting

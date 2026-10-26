@@ -57,7 +57,7 @@ copy with it, so every database also backs up off-site to Cloudflare R2.
 - Bucket `homelab-postgres-backups`, Standard storage class (Infrequent Access charges for reads,
   which the plugin does regularly). One folder per app.
 - Access: an R2 Account API token named `homelab cnpg backups`, Object Read & Write on that bucket
-  only, no expiry. Its S3 keys are in Infisical Cloud, env `dev`, folder `/homelab/r2`
+  only, no expiry. Its S3 keys are in Infisical Cloud, homelab project, env `dev`, folder `/r2`
   (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`).
 - Endpoint: `https://e8dc2af5d31bf4e016b6fab1e2515a27.r2.cloudflarestorage.com`.
 - Cost: inside R2's free tier (10GB) for databases this size.
@@ -74,7 +74,7 @@ copy with it, so every database also backs up off-site to Cloudflare R2.
 Build the credentials file from the repo root:
 
 ```sh
-infisical run --env=dev --path=/homelab/r2 -- sh -c '
+infisical run --env=dev --path=/r2 -- sh -c '
 kubectl create secret generic r2-credentials -n <namespace> \
   --from-literal=ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" \
   --from-literal=ACCESS_SECRET_KEY="$R2_SECRET_ACCESS_KEY" \

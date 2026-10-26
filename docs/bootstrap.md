@@ -4,8 +4,9 @@ Building the cluster from nothing. Run the `limactl` steps on each mini, from a 
 
 ## 1. Cluster token
 
-Generate once and store it in your password manager. It can't live in Infisical, since Infisical
-runs inside the cluster.
+Generate once. Store it in Infisical Cloud as `K3S_CLUSTER_SECRET` (homelab project, env `dev`,
+root folder `/`), with a second copy in a password manager. Cloud is fine because it's not the
+Infisical running inside this cluster.
 
 ```sh
 openssl rand -hex 32
@@ -214,9 +215,8 @@ age-keygen -o /tmp/age.txt
 ```
 
 - The `# public key: age1...` line goes in `.sops.yaml` (safe to commit).
-- The `AGE-SECRET-KEY-1...` line goes in Infisical as `SOPS_AGE_KEY` (env `dev`, folder
-  `/homelab`), with a second copy in a password manager. Infisical runs on this cluster, so it
-  can't be the only copy.
+- The `AGE-SECRET-KEY-1...` line goes in Infisical Cloud as `SOPS_AGE_KEY` (homelab project, env
+  `dev`, root folder `/`), with a second copy in a password manager.
 - Then `rm /tmp/age.txt`.
 
 **Every rebuild: give the key to the cluster.**
@@ -225,13 +225,13 @@ First check the key comes back. If this prints nothing, the next command would c
 Secret and decryption fails.
 
 ```sh
-infisical secrets get SOPS_AGE_KEY --plain --env=dev --path=/homelab
+infisical secrets get SOPS_AGE_KEY --plain --env=dev --path=/
 ```
 
 Then:
 
 ```sh
-infisical secrets get SOPS_AGE_KEY --plain --env=dev --path=/homelab \
+infisical secrets get SOPS_AGE_KEY --plain --env=dev --path=/ \
   | kubectl create secret generic sops-age -n flux-system --from-file=age.agekey=/dev/stdin
 flux reconcile kustomization apps --with-source
 ```

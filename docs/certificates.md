@@ -53,7 +53,7 @@ dig +short podinfo.home.jakehulberg.com   # should print the 4 Tailscale IPs
 
 - Cloudflare: My Profile → API Tokens → "Edit zone DNS" template, zone `jakehulberg.com` only,
   no expiration. Named `homelab cert-manager DNS-01`.
-- Infisical: `CLOUDFLARE_API_TOKEN` (env `dev`, folder `/homelab`).
+- Infisical: `CLOUDFLARE_API_TOKEN` (homelab project, env `dev`, folder `/cert-manager`).
 - Cluster: `infrastructure/configs/cloudflare-api-token.sops.yaml`, a SOPS-encrypted Secret in the
   `cert-manager` namespace.
 
@@ -61,7 +61,7 @@ To rotate it, update Infisical, then regenerate the file from the repo root. The
 `infisical secrets get --plain` ends its output with a newline, which cert-manager rejects.
 
 ```sh
-infisical secrets get CLOUDFLARE_API_TOKEN --plain --env=dev --path=/homelab | tr -d '\n' \
+infisical secrets get CLOUDFLARE_API_TOKEN --plain --env=dev --path=/cert-manager | tr -d '\n' \
   | kubectl create secret generic cloudflare-api-token -n cert-manager --from-file=api-token=/dev/stdin \
     --dry-run=client -o yaml > infrastructure/configs/cloudflare-api-token.sops.yaml
 sops -e -i infrastructure/configs/cloudflare-api-token.sops.yaml
@@ -101,5 +101,5 @@ times out (10 minutes). To get a fixed Secret in without waiting, apply it direc
 same content when it catches up:
 
 ```sh
-infisical run --env=dev --path=/homelab -- sops -d infrastructure/configs/<file>.sops.yaml | kubectl apply -f -
+infisical run --env=dev --path=/ -- sops -d infrastructure/configs/<file>.sops.yaml | kubectl apply -f -
 ```
