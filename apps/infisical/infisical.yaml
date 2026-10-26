@@ -25,6 +25,7 @@ spec:
     infisical:
       replicaCount: 1                # chart default is 2 at up to 1GB each; one is plenty here
       fullnameOverride: infisical    # otherwise the Service is "infisical-infisical-standalone-infisical"
+      kubeSecretRef: infisical-secrets-infisical #read settings from the Infisical-synced secret
     postgresql:
       enabled: false                 # use CloudNativePG instead of the bundled one
       useExistingPostgresSecret:

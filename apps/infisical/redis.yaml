@@ -21,7 +21,7 @@ spec:
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: infisical-secrets
+                  name: infisical-secrets-infisical
                   key: REDIS_PASSWORD
           ports:
             - containerPort: 6379

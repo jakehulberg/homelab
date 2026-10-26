@@ -3,7 +3,6 @@ kind: Kustomization
 resources:
   - postgres.yaml
   - redis.yaml
-  - infisical-secrets.sops.yaml
   - infisical.yaml
   - httproute.yaml
   - objectstore.yaml
