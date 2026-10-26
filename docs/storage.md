@@ -66,21 +66,13 @@ copy with it, so every database also backs up off-site to Cloudflare R2.
 
 | File | What |
 |---|---|
-| `r2-credentials.sops.yaml` | The R2 keys as a Secret in the app's namespace (Secrets can't be shared across namespaces) |
-| `objectstore.yaml` | `ObjectStore` named `r2`: bucket folder, endpoint, credentials, `retentionPolicy: "30d"` |
+| `r2-sync.yaml` | `InfisicalStaticSecret` syncing `/r2` from Infisical Cloud into `r2-credentials-infisical` in the app's namespace (Secrets can't be shared across namespaces) |
+| `objectstore.yaml` | `ObjectStore` named `r2`: bucket folder, endpoint, credentials (keys `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`), `retentionPolicy: "30d"` |
 | `postgres.yaml` | The `Cluster` gets `plugins: barman-cloud.cloudnative-pg.io` with `isWALArchiver: true` and `barmanObjectName: r2` |
 | `scheduled-backup.yaml` | `ScheduledBackup`, schedule `"0 0 3 * * *"` (this format starts with a seconds field) |
 
-Build the credentials file from the repo root:
-
-```sh
-infisical run --env=dev --path=/r2 -- sh -c '
-kubectl create secret generic r2-credentials -n <namespace> \
-  --from-literal=ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" \
-  --from-literal=ACCESS_SECRET_KEY="$R2_SECRET_ACCESS_KEY" \
-  --dry-run=client -o yaml' > apps/<app>/r2-credentials.sops.yaml
-sops -e -i apps/<app>/r2-credentials.sops.yaml
-```
+For a new database, copy `apps/infisical/r2-sync.yaml` and change the namespace; the R2 keys
+themselves stay in one place, `/r2` in Infisical Cloud ([secrets](secrets.md#give-an-app-secrets)).
 
 ### Check it
 
