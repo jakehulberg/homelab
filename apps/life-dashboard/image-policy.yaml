@@ -1,0 +1,27 @@
+# Watch ghcr.io for new life-dashboard images. Tags look like 20261026T021013-727fd40
+# (UTC build time, then the commit), so the newest is the highest timestamp.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: life-dashboard
+  namespace: flux-system
+spec:
+  image: ghcr.io/jakehulberg/life-dashboard
+  interval: 5m
+  secretRef:
+    name: ghcr-pull
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: life-dashboard
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: life-dashboard
+  filterTags:
+    pattern: '^(?P<ts>[0-9]{8}T[0-9]{6})-[0-9a-f]{7}$'
+    extract: '$ts'
+  policy:
+    alphabetical:
+      order: asc

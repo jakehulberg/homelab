@@ -1,0 +1,92 @@
+# SQLite lives here: finance.db and tasks.db. local-path pins it (and the pod) to one node.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: life-dashboard-data
+  namespace: life-dashboard
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: life-dashboard
+  namespace: life-dashboard
+spec:
+  replicas: 1                 # SQLite: exactly one writer
+  strategy:
+    type: Recreate            # stop the old pod before starting the new one
+  selector:
+    matchLabels:
+      app: life-dashboard
+  template:
+    metadata:
+      labels:
+        app: life-dashboard
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      securityContext:
+        fsGroup: 1000         # the image runs as user "node" (1000); lets it write the volume
+      containers:
+        - name: life-dashboard
+          image: ghcr.io/jakehulberg/life-dashboard:20261026T021013-727fd40 # {"$imagepolicy": "flux-system:life-dashboard"}
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: DATA_DIR
+              value: /data
+          envFrom:
+            - secretRef:
+                name: life-dashboard-secrets-infisical
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 768Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: life-dashboard-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: life-dashboard
+  namespace: life-dashboard
+spec:
+  selector:
+    app: life-dashboard
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: life-dashboard
+  namespace: life-dashboard
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+  hostnames:
+    - life.home.jakehulberg.com
+  rules:
+    - backendRefs:
+        - name: life-dashboard
+          port: 3000
