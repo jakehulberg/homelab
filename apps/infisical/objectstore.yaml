@@ -10,10 +10,10 @@ spec:
     endpointURL: https://e8dc2af5d31bf4e016b6fab1e2515a27.r2.cloudflarestorage.com
     s3Credentials:
       accessKeyId:
-        name: r2-credentials
-        key: ACCESS_KEY_ID
+        name: r2-credentials-infisical
+        key: R2_ACCESS_KEY_ID
       secretAccessKey:
-        name: r2-credentials
-        key: ACCESS_SECRET_KEY
+        name: r2-credentials-infisical
+        key: R2_SECRET_ACCESS_KEY
     wal:
       compression: gzip

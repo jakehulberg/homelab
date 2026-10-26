@@ -7,7 +7,7 @@ resources:
   - infisical.yaml
   - httproute.yaml
   - objectstore.yaml
-  - r2-credentials.sops.yaml
+  - r2-sync.yaml
   - scheduled-backup.yaml
 
 

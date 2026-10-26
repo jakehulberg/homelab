@@ -1,0 +1,21 @@
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: r2-credentials
+  namespace: infisical
+spec:
+  infisicalAuthRef:
+    name: homelab-cluster
+    namespace: infisical-operator-system
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: homelab
+      environmentSlug: dev
+      secretPath: /r2
+  targets:
+    - name: r2-credentials-infisical
+      namespace: infisical
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
