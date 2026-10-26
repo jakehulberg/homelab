@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: redis
-          image: redis:8.8-alpine
+          image: redis:8.10-alpine
           args: ["--requirepass", "$(REDIS_PASSWORD)", "--save", "", "--appendonly", "no"]   # password required, nothing written to disk
           env:
             - name: REDIS_PASSWORD
