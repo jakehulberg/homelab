@@ -9,6 +9,7 @@ resources:
   - objectstore.yaml
   - r2-sync.yaml
   - scheduled-backup.yaml
+  - infisical-secrets-sync.yaml
 
 
 
