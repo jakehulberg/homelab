@@ -1,0 +1,27 @@
+# Commits image tag bumps chosen by ImagePolicies back to this repo. Applies to any file under
+# ./apps with a {"$imagepolicy": "<namespace>:<name>"} marker on the image line.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: apps
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: flux
+        email: flux@users.noreply.github.com
+      messageTemplate: |
+        deploy {{ range .Changed.Changes }}{{ .NewValue }} {{ end }}
+    push:
+      branch: main
+  update:
+    path: ./apps
+    strategy: Setters
