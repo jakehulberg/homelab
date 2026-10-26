@@ -37,6 +37,8 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
 - **life-dashboard on Postgres:** port from SQLite to a CloudNativePG database, for replicas and the
   same backups as Infisical. About 205 synchronous `better-sqlite3` calls across 25 files become
   async, plus SQL dialect fixes and a data migration.
+- **Monitoring:** Prometheus (metrics) and Grafana (dashboards), likely via the
+  kube-prometheus-stack chart, plus Loki for logs. Watch RAM: the stack wants 1 to 2GB.
 - **Power-loss test:** reboot one mini without logging in, and confirm its node comes back `Ready`
   (Lima autostart may need the VM's user logged in).
 - **Restore drill:** restore `infisical-db` from R2 into a new Cluster and point a test Infisical at
@@ -75,7 +77,6 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
 
 ## Candidates
 
-- **Monitoring:** Grafana, Prometheus, Loki
 - **Code:** Gitea or Forgejo, Renovate
 - **Dashboards:** Homepage, Uptime Kuma
 - **Backups:** Velero
