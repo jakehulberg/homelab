@@ -81,7 +81,7 @@ kubectl describe challenge -n traefik     # Reason: and Events:
 
 | Challenge says | Cause | Fix |
 |---|---|---|
-| `the Cloudflare API token is invalid (does the API token contain a newline?)` | Token stored with a trailing newline | Regenerate the token file with `tr -d '\n'` (above) |
+| `the Cloudflare API token is invalid (does the API token contain a newline?)` | Token stored with a trailing newline (it happened when the token was piped from `infisical secrets get --plain` into a SOPS file) | Make sure the value in Infisical Cloud has no trailing newline; the synced Secret updates within 60 seconds |
 | `Found recursive CNAME record ... when looking up _acme-challenge...` | cert-manager checked the record through the cluster's DNS (VMs + Tailscale), which answers wrongly | Already fixed: the cert-manager HelmRelease sets `dns01RecursiveNameservers: 1.1.1.1:53,8.8.8.8:53` and `dns01RecursiveNameserversOnly: true` |
 
 After fixing a cause, cert-manager retries on a backoff that can take minutes. To retry now:
