@@ -2,5 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "flux": { "managerFilePatterns": ["/\\.ya?ml$/"] },
-  "kubernetes": { "managerFilePatterns": ["/\\.ya?ml$/"] }
+  "kubernetes": { "managerFilePatterns": ["/\\.ya?ml$/"] },
+  "packageRules": [
+    {
+      "description": "Flux's own manifests are upgraded as one set by the flux manager, not image by image",
+      "matchManagers": ["kubernetes"],
+      "matchFileNames": ["clusters/homelab/flux-system/**"],
+      "enabled": false
+    }
+  ]
 }
