@@ -39,10 +39,31 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
 ## Apps
 
 - draw.io
-- life-dashboard
+- **life-dashboard** (next). Next.js app, private repo `jakehulberg/life-dashboard`, today a dev
+  server in tmux on mini1 (`~/Documents/life-dashboard`).
+  - **Pipeline:** Dockerfile with a production build; a GitHub Action builds on every push to `main`
+    and pushes a private image to `ghcr.io/jakehulberg/life-dashboard`; Flux image automation
+    detects new tags and commits the bump here, so every deploy is a revertible commit.
+  - **Storage:** one PersistentVolume (local-path, ~2GB) mounted as `data/` (`finance.db`,
+    `tasks.db`, uploaded investment statements). One replica, `Recreate` strategy (SQLite has one
+    writer). Litestream sidecar streams the databases to R2, age-encrypted.
+  - **Secrets:** `/life-dashboard` folder in Infisical Cloud (weather coordinates, YouTube, GitHub
+    PAT, Plaid), synced by the operator. ghcr.io pull token also via Infisical.
+  - **Route:** `life.home.jakehulberg.com`.
+  - **To check:** `.dockerignore` keeps `data/`, `statements/`, `mortgage/` out of the image; the
+    system-stats widget reads host CPU/disk/network (`en1`), which becomes container stats; mortgage
+    seed data (account number) is hardcoded in `lib/finance-db.ts`; confirm `statements/`,
+    `mortgage/`, `cars/` aren't read at runtime.
 - Plant watering app
 - KubeCon demo
-- Agents: run my own agents on the cluster, to learn and to dogfood the idea
+- **Agent orchestration** (after life-dashboard): run my own agents on the cluster, to learn and
+  to dogfood the idea.
+  - Cilium for networking and policy (replaces k3s's flannel, so it means reinstalling the cluster
+    network).
+  - Agent Sandbox for isolated agent pods.
+  - No ServiceAccount token mounted in agent pods.
+  - Infisical Agent Vault as the agents' egress proxy, so credentials never sit in the pod.
+  - Resource limits on every agent pod.
 
 ## Candidates
 
