@@ -236,4 +236,20 @@ infisical secrets get SOPS_AGE_KEY --plain --env=dev --path=/ \
 flux reconcile kustomization apps --with-source
 ```
 
-See [secrets](secrets.md) for adding encrypted secrets.
+## 10. Infisical Operator login
+
+With `sops-age` in place, Flux decrypts the operator's machine identity credentials
+(`infrastructure/configs/infisical-universal-auth.sops.yaml`), and the operator syncs every other
+secret from Infisical Cloud. Nothing to do on a rebuild unless that identity's Client Secret was
+revoked.
+
+**First time only:** in Infisical Cloud, create a machine identity `homelab-cluster` with Universal
+Auth and no org-level access, add it to the `homelab` project as Viewer, and create a Client Secret.
+Then build the SOPS file as in [secrets](secrets.md#rotate-the-operators-credentials).
+
+Check:
+
+```sh
+kubectl get infisicalauth -n infisical-operator-system   # READY True
+kubectl get infisicalstaticsecret -A
+```
