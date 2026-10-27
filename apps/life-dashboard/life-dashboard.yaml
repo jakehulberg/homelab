@@ -16,9 +16,9 @@ metadata:
   name: life-dashboard
   namespace: life-dashboard
 spec:
-  replicas: 1                 # SQLite: exactly one writer
+  replicas: 1 # SQLite: exactly one writer
   strategy:
-    type: Recreate            # stop the old pod before starting the new one
+    type: Recreate # stop the old pod before starting the new one
   selector:
     matchLabels:
       app: life-dashboard
@@ -30,10 +30,10 @@ spec:
       imagePullSecrets:
         - name: ghcr-pull
       securityContext:
-        fsGroup: 1000         # the image runs as user "node" (1000); lets it write the volume
+        fsGroup: 1000 # the image runs as user "node" (1000); lets it write the volume
       containers:
         - name: life-dashboard
-          image: ghcr.io/jakehulberg/life-dashboard:20261026T021013-727fd40 # {"$imagepolicy": "flux-system:life-dashboard"}
+          image: ghcr.io/jakehulberg/life-dashboard:20261026T125344-ba3aeba # {"$imagepolicy": "flux-system:life-dashboard"}
           ports:
             - name: http
               containerPort: 3000
