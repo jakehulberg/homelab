@@ -1,0 +1,59 @@
+# R2 credentials (/r2) and the SSE-C encryption key (/litestream) for Litestream, in one Secret.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: litestream
+  namespace: life-dashboard
+spec:
+  infisicalAuthRef:
+    name: homelab-cluster
+    namespace: infisical-operator-system
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: homelab
+      environmentSlug: dev
+      secretPath: /r2
+    - projectSlug: homelab
+      environmentSlug: dev
+      secretPath: /litestream
+  targets:
+    - name: litestream-infisical
+      namespace: life-dashboard
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+---
+# Stream both SQLite databases to R2, encrypted with our own key (SSE-C).
+# ${VAR}s are filled in from the Secret above at startup.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litestream
+  namespace: life-dashboard
+data:
+  litestream.yml: |
+    snapshot:
+      interval: 24h        # a full copy daily; changes in between stream continuously
+      retention: 720h      # keep 30 days, so you can restore to any point in that window
+    dbs:
+      - path: /data/finance.db
+        replica:
+          type: s3
+          bucket: homelab-postgres-backups
+          path: life-dashboard/finance.db
+          endpoint: https://e8dc2af5d31bf4e016b6fab1e2515a27.r2.cloudflarestorage.com
+          region: auto
+          access-key-id: ${R2_ACCESS_KEY_ID}
+          secret-access-key: ${R2_SECRET_ACCESS_KEY}
+          sse-customer-key: ${LITESTREAM_SSE_C_KEY}
+      - path: /data/tasks.db
+        replica:
+          type: s3
+          bucket: homelab-postgres-backups
+          path: life-dashboard/tasks.db
+          endpoint: https://e8dc2af5d31bf4e016b6fab1e2515a27.r2.cloudflarestorage.com
+          region: auto
+          access-key-id: ${R2_ACCESS_KEY_ID}
+          secret-access-key: ${R2_SECRET_ACCESS_KEY}
+          sse-customer-key: ${LITESTREAM_SSE_C_KEY}

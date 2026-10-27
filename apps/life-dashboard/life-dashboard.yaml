@@ -30,7 +30,52 @@ spec:
       imagePullSecrets:
         - name: ghcr-pull
       securityContext:
+<<<<<<< Updated upstream
         fsGroup: 1000 # the image runs as user "node" (1000); lets it write the volume
+=======
+        runAsUser: 1000       # the image's "node" user; Litestream runs as it too
+        runAsGroup: 1000
+        fsGroup: 1000         # lets them write the volume
+      initContainers:
+        # On an empty volume (new node, rebuilt cluster), pull the databases back from R2 first.
+        # Does nothing if the database already exists or there's no backup yet.
+        - name: restore-finance
+          image: litestream/litestream:0.5.17
+          args: [restore, -config, /etc/litestream/litestream.yml, -if-db-not-exists, -if-replica-exists, /data/finance.db]
+          envFrom:
+            - secretRef:
+                name: litestream-infisical
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: litestream-config, mountPath: /etc/litestream }
+        - name: restore-tasks
+          image: litestream/litestream:0.5.17
+          args: [restore, -config, /etc/litestream/litestream.yml, -if-db-not-exists, -if-replica-exists, /data/tasks.db]
+          envFrom:
+            - secretRef:
+                name: litestream-infisical
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: litestream-config, mountPath: /etc/litestream }
+        # Litestream itself. restartPolicy: Always makes it a sidecar: it starts before the app,
+        # runs alongside it for the pod's whole life, and stops after it.
+        - name: litestream
+          image: litestream/litestream:0.5.17
+          restartPolicy: Always
+          args: [replicate, -config, /etc/litestream/litestream.yml]
+          envFrom:
+            - secretRef:
+                name: litestream-infisical
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: litestream-config, mountPath: /etc/litestream }
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+>>>>>>> Stashed changes
       containers:
         - name: life-dashboard
           image: ghcr.io/jakehulberg/life-dashboard:20261026T125344-ba3aeba # {"$imagepolicy": "flux-system:life-dashboard"}
@@ -61,6 +106,9 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: life-dashboard-data
+        - name: litestream-config
+          configMap:
+            name: litestream
 ---
 apiVersion: v1
 kind: Service
