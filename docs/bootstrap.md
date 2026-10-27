@@ -186,11 +186,19 @@ flux check --pre
 export GITHUB_TOKEN=$(gh auth token)
 flux bootstrap github \
   --owner=jakehulberg \
-  --repository=homelab-private \
-  --private --personal \
-  --path=clusters/homelab
+  --repository=homelab \
+  --private=false --personal \
+  --path=clusters/homelab \
+  --components-extra=image-reflector-controller,image-automation-controller \
+  --read-write-key
 git pull
 ```
+
+- `--components-extra` adds Flux's image automation controllers, which watch container registries
+  and commit image tag bumps (life-dashboard uses them).
+- `--read-write-key` makes the deploy key writable, so those bumps can be pushed.
+- Re-running bootstrap is also how Flux's own installation changes (new components, a renamed
+  repo); don't hand-edit `gotk-components.yaml` or `gotk-sync.yaml`.
 
 **c. Check:**
 
