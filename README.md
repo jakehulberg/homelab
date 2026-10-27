@@ -18,6 +18,7 @@ of truth: the cluster is changed by committing here.
 
 ## Docs
 
+- [Reproduce](docs/reproduce.md): run this setup on your own machines
 - [Plan](PLAN.md): build order and what runs on the cluster
 - [Nodes](docs/nodes.md): hardware, VM sizes, resizing
 - [Networking](docs/networking.md): Tailscale, reaching services
