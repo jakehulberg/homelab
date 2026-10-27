@@ -30,9 +30,6 @@ spec:
       imagePullSecrets:
         - name: ghcr-pull
       securityContext:
-<<<<<<< Updated upstream
-        fsGroup: 1000 # the image runs as user "node" (1000); lets it write the volume
-=======
         runAsUser: 1000       # the image's "node" user; Litestream runs as it too
         runAsGroup: 1000
         fsGroup: 1000         # lets them write the volume
@@ -75,7 +72,6 @@ spec:
               memory: 64Mi
             limits:
               memory: 256Mi
->>>>>>> Stashed changes
       containers:
         - name: life-dashboard
           image: ghcr.io/jakehulberg/life-dashboard:20261026T125344-ba3aeba # {"$imagepolicy": "flux-system:life-dashboard"}
