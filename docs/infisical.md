@@ -1,19 +1,18 @@
 # Infisical
 
-The cluster's own Infisical, a fresh stock install at `https://infisical.home.jakehulberg.com`.
+The cluster's own Infisical: a fresh stock install at `https://infisical.home.jakehulberg.com`.
 
-The demo instance (dummy data for videos) is separate: it runs in Docker on mini3 and isn't managed
-by this repo.
+The demo instance (dummy data for videos) runs separately in Docker on mini3, outside this repo.
 
 ## What's in `apps/infisical/`
 
 | File | What |
 |---|---|
-| `postgres.yaml` | Namespace `infisical`, and a CloudNativePG `Cluster` named `infisical-db` (2 instances, 5Gi) |
-| `redis.yaml` | Our own Redis (`redis:8.8-alpine`): password required, nothing saved to disk, since Infisical only uses it as a cache and queue |
-| `infisical-secrets-sync.yaml` | Syncs `/infisical` from Infisical Cloud (`ENCRYPTION_KEY`, `AUTH_SECRET`, `REDIS_PASSWORD`, `REDIS_URL`, `SITE_URL`) into the Secret `infisical-secrets-infisical` ([secrets](secrets.md#infisicals-own-keys)) |
-| `infisical.yaml` | `HelmRepository` for Infisical's chart site, and the `HelmRelease` (chart `infisical-standalone` `1.11.1`, app `v0.167.0`) |
-| `httproute.yaml` | Routes `infisical.home.jakehulberg.com` to Service `infisical` port 8080 |
+| `postgres.yaml` | Namespace `infisical`, CloudNativePG `Cluster` `infisical-db` (2 instances, 5Gi) |
+| `redis.yaml` | Own Redis (`redis:8.8-alpine`): password required, no persistence (Infisical uses it only as cache and queue) |
+| `infisical-secrets-sync.yaml` | Syncs `/infisical` from Infisical Cloud (`ENCRYPTION_KEY`, `AUTH_SECRET`, `REDIS_PASSWORD`, `REDIS_URL`, `SITE_URL`) into `infisical-secrets-infisical` ([secrets](secrets.md#infisicals-own-keys)) |
+| `infisical.yaml` | `HelmRepository` and `HelmRelease` (chart `infisical-standalone` `1.11.1`, app `v0.167.0`) |
+| `httproute.yaml` | `infisical.home.jakehulberg.com` → Service `infisical` port 8080 |
 | `r2-sync.yaml`, `objectstore.yaml`, `scheduled-backup.yaml` | Database backups to R2 ([storage](storage.md#backups)) |
 
 ## How it's wired
@@ -28,20 +27,20 @@ Infisical pod:
 
 ## Chart values, and why
 
-The chart bundles its own Postgres, Redis and ingress-nginx as sub-charts, all on by default
-(`helm show chart infisical-helm-charts/infisical-standalone --version 1.11.1` lists them under
-`dependencies`). All are turned off:
+The chart bundles Postgres, Redis and ingress-nginx sub-charts, all on by default (see
+`dependencies` in `helm show chart infisical-helm-charts/infisical-standalone --version 1.11.1`).
+All are off:
 
 | Value | Why |
 |---|---|
-| `postgresql.enabled: false` + `useExistingPostgresSecret` → `infisical-db-app` / `uri` | CloudNativePG runs Postgres instead (replicated, backups). The bundled one uses unmaintained `bitnamilegacy` images and a default password of `root`. |
-| `redis.enabled: false` | Same image problem, and its password (default `mysecretpassword`) would sit in plain text in this repo. `REDIS_URL` comes from `infisical-secrets` instead. |
-| `ingress.enabled: false` **and** `ingress.nginx.enabled: false` | Traefik is the front door. The bundled ingress-nginx has its own switch; turning off only `ingress.enabled` would still install it. |
-| `infisical.replicaCount: 1` | Chart default is 2, each allowed up to 1GB. One is plenty here. |
-| `infisical.fullnameOverride: infisical` | Otherwise the Service is named `infisical-infisical-standalone-infisical`. The HTTPRoute points at `infisical`. |
-| `infisical.kubeSecretRef: infisical-secrets-infisical` | The Secret Infisical loads its settings from, synced by the Infisical Operator. Redis reads `REDIS_PASSWORD` from the same Secret. |
+| `postgresql.enabled: false` + `useExistingPostgresSecret` → `infisical-db-app` / `uri` | CloudNativePG instead (replicated, backed up). The bundled one uses unmaintained `bitnamilegacy` images and password `root`. |
+| `redis.enabled: false` | Same image problem, and its password (default `mysecretpassword`) would sit in plain text here. `REDIS_URL` comes from the synced Secret. |
+| `ingress.enabled: false` **and** `ingress.nginx.enabled: false` | Traefik is the front door. ingress-nginx has its own switch; `ingress.enabled` alone still installs it. |
+| `infisical.replicaCount: 1` | Default is 2 at up to 1GB each. One is plenty. |
+| `infisical.fullnameOverride: infisical` | Otherwise the Service is `infisical-infisical-standalone-infisical`. The HTTPRoute targets `infisical`. |
+| `infisical.kubeSecretRef: infisical-secrets-infisical` | Infisical's settings Secret, synced by the operator. Redis reads `REDIS_PASSWORD` from it too. |
 
-To preview what the chart creates with these values, without touching the cluster:
+Preview what the chart creates, without touching the cluster:
 
 ```sh
 helm repo add infisical-helm-charts 'https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/'
@@ -50,43 +49,38 @@ helm template infisical infisical-helm-charts/infisical-standalone --version 1.1
   | grep -E '^kind:|^  name:'
 ```
 
-It should list a Deployment, a Service and RBAC (ServiceAccount, Role, RoleBinding), and no
-NGINX, Postgres or Redis.
+Expect a Deployment, a Service and RBAC (ServiceAccount, Role, RoleBinding); no NGINX, Postgres or
+Redis.
 
 ## First boot
 
-A fresh database takes about **10 minutes** to come up: Infisical replays every database migration
-since its first release, and each query crosses Tailscale over Wi-Fi whenever the pod and the
-database primary are on different nodes. The pod sits at `0/1 Running` meanwhile. Later restarts
-skip finished migrations and start in seconds; upgrades only run the new ones.
-
-Watch it:
+A fresh database takes ~**10 minutes**: Infisical replays every migration since its first release,
+and each query crosses Tailscale over Wi-Fi when the pod and primary are on different nodes. The pod
+sits at `0/1 Running` meanwhile. Later restarts take seconds; upgrades run only new migrations.
 
 ```sh
 kubectl get pods -n infisical -w                    # wait for 1/1; RESTARTS must stay 0
-kubectl logs -n infisical deploy/infisical -f       # migration steps scrolling by
+kubectl logs -n infisical deploy/infisical -f       # migration steps
 ```
 
-If `RESTARTS` goes above 0 during first boot, Kubernetes killed it mid-migration and the pod needs a
-longer startup allowance.
+`RESTARTS` above 0 means Kubernetes killed it mid-migration; give the pod a longer startup
+allowance.
 
-**Create the admin account right after it comes up.** Until someone signs up, anyone on the tailnet
-can claim the instance.
+**Create the admin account immediately.** Until then, anyone on the tailnet can claim the instance.
 
 ## Upgrading
 
-Bump `version` in the HelmRelease (the chart version pins the Infisical image). Check the chart's
-release notes for value changes first with `helm show values` on the new version.
+Bump `version` in the HelmRelease (it pins the image). Check release notes and `helm show values`
+on the new version for value changes first.
 
 ## Redis address
 
-`REDIS_URL` uses the short name `redis`, not `redis.infisical.svc.cluster.local`. Before the
-cluster DNS fix ([networking](networking.md#dns-inside-the-cluster)), the long name made each lookup
-ask Tailscale's and the router's DNS first, lookups took seconds, and Infisical's startup Redis
-check (`[client=bootstrap]`) timed out over and over (`Redis connection error ... ETIMEDOUT` in the
-logs) while the pod sat at `0/1`.
+`REDIS_URL` uses `redis`, not `redis.infisical.svc.cluster.local`. Before the DNS fix
+([networking](networking.md#dns-inside-the-cluster)), the long name hit Tailscale's and the
+router's DNS first, lookups took seconds, and Infisical's startup Redis check (`[client=bootstrap]`)
+kept timing out (`Redis connection error ... ETIMEDOUT`) with the pod stuck at `0/1`.
 
 ## Backups
 
-Continuous to R2 plus a daily full backup; see [storage](storage.md#backups). `ENCRYPTION_KEY` and
-`AUTH_SECRET` live in Infisical Cloud; without them a restored database can't be decrypted.
+Continuous to R2 plus a daily full backup ([storage](storage.md#backups)). A restored database is
+unreadable without `ENCRYPTION_KEY` and `AUTH_SECRET`, which live in Infisical Cloud.

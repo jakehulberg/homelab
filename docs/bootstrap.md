@@ -1,12 +1,11 @@
 # Bootstrap
 
-Building the cluster from nothing. Run the `limactl` steps on each mini, from a checkout of this repo.
+Building the cluster from nothing. Run `limactl` steps on each mini, from a checkout of this repo.
 
 ## 1. Cluster token
 
-Generate once. Store it in Infisical Cloud as `K3S_CLUSTER_SECRET` (homelab project, env `dev`,
-root folder `/`), with a second copy in a password manager. Cloud is fine because it's not the
-Infisical running inside this cluster.
+Generate once. Store as `K3S_CLUSTER_SECRET` in Infisical Cloud (homelab project, env `dev`, folder
+`/`), plus a password manager copy. Cloud is fine since it isn't the Infisical inside this cluster.
 
 ```sh
 openssl rand -hex 32
@@ -14,7 +13,7 @@ openssl rand -hex 32
 
 ## 2. Create the VMs
 
-On each mini (replace `mini1` with `mini2` / `mini3`):
+On each mini (swap in `mini2` / `mini3`):
 
 ```sh
 brew install lima
@@ -29,7 +28,7 @@ limactl autostart enable k3s-mini1
 limactl shell k3s-mini1 sudo tailscale up --hostname=k3s-mini1
 ```
 
-In the Tailscale admin console, disable key expiry for each `k3s-*` machine.
+Disable key expiry for each `k3s-*` machine in the Tailscale admin console.
 
 ## 4. Copy the k3s config in
 
@@ -42,27 +41,27 @@ limactl shell k3s-mini1 sudo sh -c '
   printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/rancher/k3s/resolv.conf'
 ```
 
-The last line is the DNS file `config.yaml` points k3s at, so pods don't inherit Tailscale's and
-the router's search domains ([networking](networking.md#dns-inside-the-cluster)).
+The `resolv.conf` keeps Tailscale's and the router's search domains out of pods
+([networking](networking.md#dns-inside-the-cluster)).
 
 ## 5. Install k3s
 
-The version is pinned so every node matches (see `docs/nodes.md`).
+Version is pinned so every node matches ([nodes](nodes.md)).
 
-**a. Shell into the VM** (on that mini):
+**a. Shell in** (on that mini):
 
 ```sh
 limactl shell k3s-mini1
 ```
 
-**b. Set the token.** Paste it and press Enter; nothing shows on screen. Run this on its own line,
-not pasted together with the next command, or `read` swallows the next line as the token.
+**b. Set the token.** Paste, press Enter (no echo). Run it alone, not pasted with the next command,
+or `read` swallows that line as the token.
 
 ```sh
 read -s K3S_TOKEN && export K3S_TOKEN
 ```
 
-**c. Install.** The first server (mini1) creates the cluster:
+**c. Install.** mini1 creates the cluster:
 
 ```sh
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 sh -s - server \
@@ -71,7 +70,7 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 sh -s - server \
   --node-ip "$(tailscale ip -4)"
 ```
 
-mini2 and mini3 join it (use `k3s-mini3` on mini3):
+mini2 and mini3 join (`k3s-mini3` on mini3):
 
 ```sh
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 sh -s - server \
@@ -80,13 +79,13 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 sh -s - server \
   --node-ip "$(tailscale ip -4)"
 ```
 
-**d. Check.** `k3s --version` should print the pinned version.
+**d. Check:** `k3s --version` prints the pinned version.
 
 ## 6. Add the Pi
 
-The Pi runs k3s directly (no VM) and is already on Tailscale. It joins as an agent (worker only).
+Bare-metal k3s agent (worker only), already on Tailscale.
 
-**a. Enable memory cgroups and reboot.** On the Pi (`ssh pi`):
+**a. Enable memory cgroups and reboot** (on the Pi, `ssh pi`):
 
 ```sh
 grep -q cgroup_enable=memory /boot/firmware/cmdline.txt \
@@ -94,15 +93,14 @@ grep -q cgroup_enable=memory /boot/firmware/cmdline.txt \
 sudo reboot
 ```
 
-**b. Copy the k3s config over.** From your laptop, in this repo (after the Pi is back up):
+**b. Copy the config** (laptop, in this repo, once the Pi is back). Only `config.yaml`;
+`server.yaml` is for the minis.
 
 ```sh
 scp k3s/config.yaml pi:/tmp/config.yaml
 ```
 
-Only `config.yaml`. `server.yaml` is for the minis.
-
-**c. Put the config in place.** On the Pi:
+**c. Put it in place** (Pi):
 
 ```sh
 sudo mkdir -p /etc/rancher/k3s
@@ -110,13 +108,13 @@ sudo mv /tmp/config.yaml /etc/rancher/k3s/config.yaml
 sudo sh -c 'printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/rancher/k3s/resolv.conf'
 ```
 
-**d. Set the token.** On the Pi. Paste it and press Enter; nothing shows on screen.
+**d. Set the token** (Pi; paste, Enter, no echo):
 
 ```sh
 read -s K3S_TOKEN && export K3S_TOKEN
 ```
 
-**e. Install k3s as an agent.** On the Pi:
+**e. Install as agent** (Pi):
 
 ```sh
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 K3S_URL=https://k3s-mini1:6443 sh -s - agent \
@@ -124,35 +122,29 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 K3S_URL=https://
   --node-ip "$(tailscale ip -4)"
 ```
 
-**f. Check it joined.** From your laptop:
-
-```sh
-kubectl get nodes
-```
-
-`pi` should show `Ready` within a minute.
+**f. Check** (laptop): `kubectl get nodes` shows `pi` `Ready` within a minute.
 
 ## 7. kubeconfig on your laptop
 
-k3s writes an admin kubeconfig inside the first server VM. It points at `127.0.0.1`, so copy it
-out, point it at `k3s-mini1` (reachable over Tailscale), and merge it into `~/.kube/config` as a
-context named `homelab`. Never commit this file: it is full admin access to the cluster.
+k3s writes an admin kubeconfig in the first server VM, pointing at `127.0.0.1`. Copy it out, point
+it at `k3s-mini1`, and merge it into `~/.kube/config` as context `homelab`. Never commit it: it's
+full cluster admin.
 
-**a. Copy it out.** From your laptop. SSH in as the macOS user that created the VM, and use the
-full `limactl` path, since non-interactive SSH doesn't load Homebrew's PATH:
+**a. Copy it out.** SSH as the macOS user that created the VM, with the full `limactl` path
+(non-interactive SSH skips Homebrew's PATH):
 
 ```sh
 ssh mini1 '/opt/homebrew/bin/limactl shell k3s-mini1 sudo cat /etc/rancher/k3s/k3s.yaml' \
   | sed 's/127.0.0.1/k3s-mini1/' > /tmp/homelab.yaml
 ```
 
-**b. Rename its context.** k3s names it `default`:
+**b. Rename the context** (k3s calls it `default`):
 
 ```sh
 KUBECONFIG=/tmp/homelab.yaml kubectl config rename-context default homelab
 ```
 
-**c. Merge it into `~/.kube/config`:**
+**c. Merge:**
 
 ```sh
 KUBECONFIG=~/.kube/config:/tmp/homelab.yaml kubectl config view --flatten > /tmp/kubeconfig \
@@ -166,21 +158,21 @@ kubectl config use-context homelab
 kubectl get nodes -o wide
 ```
 
-Switch clusters with `kubectl config use-context <name>`; list them with `kubectl config get-contexts`.
+`kubectl config get-contexts` lists clusters; `use-context <name>` switches.
 
 ## 8. Flux
 
-From your laptop, in this repo, with `kubectl` on the `homelab` context.
+Laptop, in this repo, on the `homelab` context.
 
-**a. Install the CLI and check the cluster:**
+**a. Install the CLI and pre-check:**
 
 ```sh
 brew install fluxcd/tap/flux
 flux check --pre
 ```
 
-**b. Bootstrap.** This installs Flux into the cluster, commits its manifests to
-`clusters/homelab/flux-system/`, and adds a deploy key to the GitHub repo so the cluster can pull it.
+**b. Bootstrap.** Installs Flux, commits its manifests to `clusters/homelab/flux-system/`, and adds
+a deploy key to the GitHub repo.
 
 ```sh
 export GITHUB_TOKEN=$(gh auth token)
@@ -194,26 +186,25 @@ flux bootstrap github \
 git pull
 ```
 
-- `--components-extra` adds Flux's image automation controllers, which watch container registries
-  and commit image tag bumps (life-dashboard uses them).
-- `--read-write-key` makes the deploy key writable, so those bumps can be pushed.
-- Re-running bootstrap is also how Flux's own installation changes (new components, a renamed
-  repo); don't hand-edit `gotk-components.yaml` or `gotk-sync.yaml`.
+- `--components-extra`: image automation controllers, which watch registries and commit tag bumps
+  (used by life-dashboard).
+- `--read-write-key`: lets those bumps be pushed.
+- Change Flux's own install (components, repo name) by re-running bootstrap, never by editing
+  `gotk-components.yaml` or `gotk-sync.yaml`.
 
 **c. Check:**
 
 ```sh
-flux check                    # ends with "all checks passed"
+flux check                    # "all checks passed"
 flux get kustomizations       # flux-system, infrastructure, infra-configs, apps all READY True
 ```
 
-From here on, the cluster is changed by committing to this repo.
+From here on, change the cluster by committing.
 
 ## 9. SOPS key
 
-Flux decrypts the encrypted secrets in this repo with an age private key, which the cluster reads
-from the `sops-age` Secret. That Secret is the one thing never stored in git, so recreate it on
-every rebuild.
+Flux decrypts this repo's SOPS files with an age private key from the `sops-age` Secret. It's the
+one secret never in git, so recreate it on every rebuild.
 
 **First time only: make the key.**
 
@@ -222,21 +213,17 @@ brew install sops age
 age-keygen -o /tmp/age.txt
 ```
 
-- The `# public key: age1...` line goes in `.sops.yaml` (safe to commit).
-- The `AGE-SECRET-KEY-1...` line goes in Infisical Cloud as `SOPS_AGE_KEY` (homelab project, env
-  `dev`, root folder `/`), with a second copy in a password manager.
-- Then `rm /tmp/age.txt`.
+- `# public key: age1...` goes in `.sops.yaml` (safe to commit).
+- `AGE-SECRET-KEY-1...` goes in Infisical Cloud as `SOPS_AGE_KEY` (homelab project, env `dev`,
+  folder `/`), plus a password manager copy.
+- `rm /tmp/age.txt`.
 
-**Every rebuild: give the key to the cluster.**
-
-First check the key comes back. If this prints nothing, the next command would create an empty
-Secret and decryption fails.
+**Every rebuild: give it to the cluster.** First confirm it comes back; if this prints nothing, the
+next command creates an empty Secret and decryption fails.
 
 ```sh
 infisical secrets get SOPS_AGE_KEY --plain --env=dev --path=/
 ```
-
-Then:
 
 ```sh
 infisical secrets get SOPS_AGE_KEY --plain --env=dev --path=/ \
@@ -246,16 +233,13 @@ flux reconcile kustomization apps --with-source
 
 ## 10. Infisical Operator login
 
-With `sops-age` in place, Flux decrypts the operator's machine identity credentials
-(`infrastructure/configs/infisical-universal-auth.sops.yaml`), and the operator syncs every other
-secret from Infisical Cloud. Nothing to do on a rebuild unless that identity's Client Secret was
-revoked.
+With `sops-age` in place, Flux decrypts the operator's credentials
+(`infrastructure/configs/infisical-universal-auth.sops.yaml`) and the operator syncs everything
+else. Nothing to do on a rebuild unless that Client Secret was revoked.
 
-**First time only:** in Infisical Cloud, create a machine identity `homelab-cluster` with Universal
-Auth and no org-level access, add it to the `homelab` project as Viewer, and create a Client Secret.
-Then build the SOPS file as in [secrets](secrets.md#rotate-the-operators-credentials).
-
-Check:
+**First time only:** in Infisical Cloud, create machine identity `homelab-cluster` (Universal Auth,
+no org-level access), add it to the `homelab` project as Viewer, create a Client Secret, then build
+the SOPS file ([secrets](secrets.md#rotate-the-operators-credentials)).
 
 ```sh
 kubectl get infisicalauth -n infisical-operator-system   # READY True

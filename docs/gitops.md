@@ -1,7 +1,6 @@
 # GitOps
 
-The cluster is changed by pushing to `main`. Flux checks GitHub every minute and makes the cluster
-match the repo.
+Push to `main` to change the cluster. Flux polls GitHub every minute and makes the cluster match.
 
 ## How Flux reads the repo
 
@@ -31,38 +30,34 @@ apps/                   things you use: podinfo, Infisical, draw.io
     httproute.yaml
 ```
 
-Three Flux Kustomizations, each waiting for the one before:
+Three Flux Kustomizations, each waiting on the previous:
 
 ```
 infrastructure  →  infra-configs  →  apps
 (controllers)      (configs)
 ```
 
-1. Flux's root Kustomization (`flux-system`, in `clusters/homelab/flux-system/gotk-sync.yaml`)
-   applies everything in `clusters/homelab/`. That includes the three pointers.
-2. `infrastructure` applies `./infrastructure/controllers`. `wait: true` means it's only `Ready`
-   once everything in it is healthy.
-3. `infra-configs` applies `./infrastructure/configs`, with `dependsOn: infrastructure`.
-4. `apps` applies `./apps`, with `dependsOn: infra-configs`.
-5. In each folder, Flux follows `kustomization.yaml`'s `resources` list. Anything not listed is
-   ignored.
+1. The root Kustomization (`flux-system`, in `gotk-sync.yaml`) applies `clusters/homelab/`,
+   including the three pointers.
+2. `infrastructure` applies `./infrastructure/controllers`. `wait: true`: `Ready` only once
+   everything in it is healthy.
+3. `infra-configs` applies `./infrastructure/configs`, `dependsOn: infrastructure`.
+4. `apps` applies `./apps`, `dependsOn: infra-configs`.
+5. Within each folder, Flux follows `kustomization.yaml`'s `resources`. Unlisted files are ignored.
 
 ### Why controllers and configs are split
 
-Configs use types that controllers install. A ClusterIssuer, for example, is a type cert-manager
-adds. Flux checks every file in a Kustomization before applying any of them, so on a fresh cluster
-a ClusterIssuer in the same batch as cert-manager would fail ("no matches for kind"). A second
-Kustomization that waits for the first avoids that. This is the layout Flux's own example repo
-(`fluxcd/flux2-kustomize-helm-example`) uses.
+Configs use types the controllers install (a ClusterIssuer is a cert-manager type). Flux validates
+every file in a Kustomization before applying, so on a fresh cluster a ClusterIssuer alongside
+cert-manager fails with "no matches for kind". A second Kustomization that waits avoids it. Same
+layout as Flux's `fluxcd/flux2-kustomize-helm-example`.
 
-The first one is still named `infrastructure` (Flux's example calls it `infra-controllers`):
-renaming a Flux Kustomization makes Flux delete and reinstall everything it manages.
+The first is still named `infrastructure` (the example says `infra-controllers`) because renaming a
+Flux Kustomization deletes and reinstalls everything it manages.
 
-Rule of thumb: Helm charts and CRDs go in `controllers/`; objects of types those install go in
-`configs/`.
+Rule: Helm charts and CRDs go in `controllers/`; objects of those types go in `configs/`.
 
-Only `clusters/homelab/` and the folders it points at are read. `lima/`, `k3s/` and `docs/` are
-ignored by Flux.
+Flux reads only `clusters/homelab/` and what it points at; `lima/`, `k3s/`, `docs/` are ignored.
 
 ## Two things called Kustomization
 
@@ -74,23 +69,21 @@ ignored by Flux.
 
 ## Add an app
 
-1. Make `apps/<name>/` with the app's YAML and a `kustomization.yaml` listing those files.
+1. Create `apps/<name>/` with its YAML and a `kustomization.yaml` listing the files.
 2. Add `- <name>` to `apps/kustomization.yaml`.
 3. Commit and push.
 
-Infrastructure works the same way under `infrastructure/controllers/` (charts, CRDs) or
-`infrastructure/configs/` (objects of types the controllers install).
+Infrastructure works the same under `infrastructure/controllers/` or `infrastructure/configs/`.
 
 ## Remove an app
 
-Delete its line from `apps/kustomization.yaml` and push. `prune: true` makes Flux delete everything
-it created. The folder can stay in the repo for later.
+Delete its line from `apps/kustomization.yaml` and push. `prune: true` deletes everything Flux
+created. The folder can stay.
 
 ## Helm charts from OCI registries
 
-Charts pulled with an `OCIRepository` (`oci://...`) need a `layerSelector`. Some chart artifacts
-(Traefik's, for one) carry extra layers like signatures, and without it Flux tries to unpack the
-wrong one and fails with `gzip: invalid header`.
+`OCIRepository` sources (`oci://...`) need a `layerSelector`. Some artifacts (Traefik's) carry
+extra layers like signatures, and without it Flux unpacks the wrong one: `gzip: invalid header`.
 
 ```yaml
 apiVersion: source.toolkit.fluxcd.io/v1
@@ -104,19 +97,17 @@ spec:
     operation: copy
 ```
 
-Change chart settings with `values` in the HelmRelease, not by copying the chart. To see every
-setting and its default: `helm show values oci://ghcr.io/<org>/<chart> --version <version>`.
+Configure charts via HelmRelease `values`, not by copying the chart. All settings and defaults:
+`helm show values oci://ghcr.io/<org>/<chart> --version <version>`.
 
 ## Troubleshooting
 
-- **Pushed a file, `kubectl get` says `No resources found`:** the file isn't listed in its folder's
+- **Pushed a file, `kubectl get` says `No resources found`:** it's not in its folder's
   `kustomization.yaml`.
-- **A Kustomization is stuck on `Reconciliation in progress`:** `infrastructure` and
-  `infra-configs` have `wait: true`, so they wait (up to 10 minutes) on everything in them being
-  healthy, and hold new pushes until then. `flux get helmreleases -A` or
-  `kubectl get certificate -A` shows which one is unhealthy.
-- **`dependency '...' is not ready`:** the one before it in the chain is unhealthy. Fix that one
-  first; the rest follow.
+- **Stuck on `Reconciliation in progress`:** `infrastructure` and `infra-configs` wait (up to 10
+  minutes) for everything to be healthy, holding new pushes meanwhile. Find the culprit with
+  `flux get helmreleases -A` or `kubectl get certificate -A`.
+- **`dependency '...' is not ready`:** fix the earlier one in the chain; the rest follow.
 
 ## Apply now instead of waiting
 

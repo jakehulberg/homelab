@@ -1,6 +1,6 @@
 # Learning
 
-Reading list for understanding what this homelab is built from. 
+Reading list for understanding what this homelab is built from.
 
 | # | Read | Time | Why it matters here |
 |---|---|---|---|
