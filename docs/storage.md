@@ -22,6 +22,7 @@ full. k3s-mini1's VM disk is only 15GiB, so keep an eye on databases that land t
 | Database | App | Namespace | Instances | Backups |
 |---|---|---|---|---|
 | `infisical-db` | Infisical | `infisical` | 2 | R2 `s3://homelab-postgres-backups/infisical`, continuous + daily 03:00, 30 days |
+| `finance.db`, `tasks.db` (SQLite) | life-dashboard | `life-dashboard` | 1 | Litestream to R2 `life-dashboard/`, SSE-C encrypted, continuous + daily snapshot, 30 days |
 
 The demo Infisical on mini3 (Docker) has its own Postgres outside the cluster and isn't covered
 here.
@@ -120,6 +121,39 @@ spec:
 
 Infisical also needs its original `ENCRYPTION_KEY` and `AUTH_SECRET` (in Infisical Cloud) to read
 a restored database. A restore drill belongs on the to-do list.
+
+## SQLite backups: Litestream (life-dashboard)
+
+life-dashboard keeps its data in SQLite on a 2GB local-path volume (`/data`), one pod, `Recreate`
+strategy. A Litestream sidecar streams every change to R2 within about a second.
+
+| Piece | Where |
+|---|---|
+| Litestream config (`litestream.yml`) | ConfigMap `litestream` in `apps/life-dashboard/litestream.yaml` |
+| R2 keys + SSE-C key | Synced from Infisical `/r2` and `/litestream` into Secret `litestream-infisical` |
+| Sidecar + restore steps | `apps/life-dashboard/life-dashboard.yaml` (`initContainers`) |
+
+- **Encryption:** SSE-C. Litestream sends our 256-bit key (`LITESTREAM_SSE_C_KEY` in Infisical
+  `/litestream`) with every request and R2 encrypts with it; Cloudflare never stores the key.
+  **Lose the key and the backups are unreadable.** Litestream 0.5 doesn't support age.
+- **Snapshots:** full copy daily, kept 30 days; restore to any point in that window.
+- **Requires WAL mode:** the app sets `journal_mode = WAL` and `busy_timeout = 5000`.
+- **Automatic restore:** two init containers run `litestream restore -if-db-not-exists
+  -if-replica-exists` before the app starts, so an empty volume (new node, rebuilt cluster) is
+  refilled from R2. With data present they do nothing.
+- **Sidecar:** Litestream is an init container with `restartPolicy: Always`, so it starts before the
+  app and runs alongside it.
+
+Check it:
+
+```sh
+kubectl get pods -n life-dashboard                                          # 2/2 Running
+kubectl logs -n life-dashboard deploy/life-dashboard -c litestream --tail=20 # "snapshot complete", no errors
+```
+
+Moving data into the volume by hand (as done once from mini1): suspend `apps`, scale to 0, mount the
+volume in a busybox pod running as user 1000, `kubectl cp` the `.db` files in, delete `-wal`/`-shm`
+files, scale back to 1, resume.
 
 ## Restarts and failover
 
