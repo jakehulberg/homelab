@@ -29,11 +29,9 @@ Kubernetes homelab managed with GitOps (Flux). This repo is the source of truth.
 
 ## To do
 
-- **life-dashboard backups (do first):** its SQLite data lives only in one volume, with no off-site
-  copy; mini1's `~/Documents/life-dashboard/data/` is a frozen copy from the 2026-10-26 migration.
-  Plan: Litestream sidecar streaming `finance.db` and `tasks.db` to R2, encrypted with SSE-C (a key
-  of ours in Infisical, never stored by Cloudflare). Litestream 0.5 doesn't support age; optional
-  extra: nightly age-encrypted snapshot via a CronJob. Use a key separate from the SOPS key.
+- **life-dashboard restore drill:** backups stream to R2 (Litestream, SSE-C), but a restore hasn't
+  been tested. Optional extra: nightly age-encrypted snapshot via a CronJob (Litestream 0.5 doesn't
+  support age).
 - **life-dashboard on Postgres:** port from SQLite to a CloudNativePG database, for replicas and the
   same backups as Infisical. About 205 synchronous `better-sqlite3` calls across 25 files become
   async, plus SQL dialect fixes and a data migration.
