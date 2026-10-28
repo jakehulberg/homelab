@@ -6,4 +6,5 @@ resources:
   - cert-manager
   - cloudnative-pg
   - infisical-operator
+  - agent-sandbox
 
