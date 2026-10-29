@@ -12,15 +12,15 @@ browser ──OIDC (Authentik)──▶ airlock-web ──bearer token + user he
                                                                                 │
                                          SandboxClaim, pods/exec, in "agents" only
                                                                                 ▼
-                     SandboxWarmPool "basic" ── keeps 1 sandbox ready ──▶ sandbox pod (container "agent")
+                     SandboxWarmPool "claude" ── sandbox per claim ──▶ sandbox pod (container "agent")
 ```
 
 1. You sign in to web through Authentik.
 2. You pick a pool and a TTL. The orchestrator creates a `SandboxClaim` with `shutdownTime` and
    `shutdownPolicy: Delete`, so every sandbox expires. Each session gets its own claim.
-3. Agent Sandbox hands the claim a ready sandbox from the warm pool, and the pool starts a
-   replacement.
-4. A task runs `AIRLOCK_TASK_COMMAND` in the `agent` container through `pods/exec`, with the prompt
+3. Agent Sandbox binds the claim to a sandbox from the pool. `claude` keeps `replicas: 0`, so each
+   claim starts a fresh sandbox.
+4. A task runs the pool's task command in its agent container through `pods/exec`, with the prompt
    on stdin. Output streams back to the browser.
 
 Claims are labeled with a hash of your OIDC subject; each user sees only their own. Task output lives
@@ -31,7 +31,10 @@ in the orchestrator's memory and is lost on restart, so it runs one replica.
 | Path | What |
 |---|---|
 | `infrastructure/controllers/agent-sandbox/` | Agent Sandbox `v1.0.8`: CRDs (`Sandbox`, `SandboxTemplate`, `SandboxWarmPool`, `SandboxClaim`) and the controller with `--extensions`, in `agent-sandbox-system`. The release's `sandbox-with-extensions.yaml`, downloaded. |
-| `apps/agents/sandbox.yaml` | Namespace `agents` (Pod Security `restricted`), `SandboxTemplate` `basic`, `SandboxWarmPool` `basic` (1 replica) |
+| `apps/agents/sandbox.yaml` | Namespace `agents` (Pod Security `restricted`) |
+| `apps/agents/claude.yaml` | ConfigMap `agent-session`, ServiceAccount `coding-agent`, `SandboxTemplate` and `SandboxWarmPool` `claude` |
+| `apps/agents/token-reviewer.yaml` | ServiceAccount `infisical-token-reviewer` in `infisical` with `system:auth-delegator`, and its token Secret, for Infisical's Kubernetes Auth |
+| `apps/agent-vault/` | Agent Vault proxy: Deployment, Service `agent-vault-proxy:17323`, NetworkPolicy (ingress from `agents` only), and `/agent-vault` synced from Infisical Cloud |
 | `apps/airlock/secrets-sync.yaml` | Namespace `airlock`; syncs `/airlock` into `airlock-secrets-infisical` and `/ghcr` into the image pull secret `ghcr-pull` |
 | `apps/airlock/orchestrator.yaml` | ServiceAccount, `Role` and `RoleBinding` in `agents`, Deployment, Service `airlock-orchestrator:8081`, NetworkPolicy |
 | `apps/airlock/web.yaml` | Deployment, Service `airlock-web:8080` |
@@ -65,19 +68,32 @@ Web loads all of them with `envFrom`. The orchestrator gets only `AIRLOCK_API_TO
 |---|---|
 | Kubernetes API | The orchestrator's Role covers only the `agents` namespace: claims, pools, sandboxes, pods, `pods/exec`. Web has no ServiceAccount token. Sandboxes have `automountServiceAccountToken: false`. |
 | Orchestrator | NetworkPolicy: only pods labeled `app: airlock-web` may reach port 8081. |
-| Sandbox network | Agent Sandbox's default policy for each template (no `networkPolicy` set): ingress denied, egress to the public internet only, private ranges and metadata blocked. k3s enforces NetworkPolicies. |
+| Sandbox network | The template's `networkPolicy`: ingress denied, egress only to DNS, the Agent Vault proxy and Infisical. The proxy allows only the access bundle's hosts. k3s enforces NetworkPolicies. |
+| Credentials | None in the agent container. The proxy adds the API key on the way out. |
 | Sandbox pod | Non-root, `RuntimeDefault` seccomp, no privilege escalation, all capabilities dropped, read-only root, memory limit. The namespace enforces Pod Security `restricted`. |
 
 ## The sandbox template
 
-`basic` is a placeholder: busybox running `sleep infinity` in a container named `agent`. It proves
-the claim flow; tasks fail because there's no agent in it. The real template needs:
+`claude` runs `ghcr.io/jakehulberg/agent-claude` from
+[agent-images](https://github.com/jakehulberg/agent-images), plus a `session` sidecar:
 
-- An `agent` container with the `claude` CLI.
-- The Agent Vault session sidecar that writes `/session/env`, which the default task command
-  sources ([PLAN](../PLAN.md#to-do)).
+1. The sidecar logs in to the homelab Infisical with Kubernetes Auth, using a projected
+   ServiceAccount token with audience `infisical`.
+2. It opens an Agent Vault session on the `airlock` access bundle and writes the proxy settings
+   and CA to `/session/env` and `/session/ca.pem`. The session is revoked when the pod is deleted.
+3. The task command sources `/session/env` and runs `claude -p`, with `--continue` after the
+   first task, so a claim is one conversation.
 
-A pool's `airlock.jakehulberg.com/description` annotation shows in Airlock's claim form.
+Kubernetes Auth needs `ALLOW_INTERNAL_IP_CONNECTIONS=true` in Infisical, because the token review
+goes to `https://kubernetes.default.svc`. The proxy's CA fingerprint is pinned in `agent-session`.
+
+Pool annotations Airlock reads:
+
+| Annotation | What |
+|---|---|
+| `airlock.jakehulberg.com/description` | Shown in the claim form |
+| `airlock.jakehulberg.com/agent-container` | Container to exec into (default `agent`) |
+| `airlock.jakehulberg.com/task-command` | Run with `sh -c`, prompt on stdin |
 
 ## Checking it
 
@@ -90,5 +106,6 @@ kubectl logs -n airlock deploy/airlock-orchestrator  # claims and tasks, as JSON
 
 ## Resources
 
-Controller, web and orchestrator are small Go programs, under 100MiB each. The cost is the warm pool:
-each ready sandbox is a running pod. Keep `replicas` low.
+Controller, web and orchestrator are small Go programs, under 100MiB each. Each claimed sandbox is a
+pod with up to 1 CPU and 1GiB for the agent. Warm pool `replicas` keep idle pods running, so they
+stay at 0.
