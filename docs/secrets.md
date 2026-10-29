@@ -13,6 +13,7 @@ Infisical Cloud (homelab project)
   /cert-manager      CLOUDFLARE_API_TOKEN
   /r2                R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
   /infisical         ENCRYPTION_KEY, AUTH_SECRET, REDIS_PASSWORD, REDIS_URL, SITE_URL
+  /authentik         AUTHENTIK_SECRET_KEY
         │
         │  Infisical Operator, logged in as machine identity "homelab-cluster"
         ▼
@@ -26,6 +27,7 @@ Kubernetes Secrets, one per folder per app
 | `infrastructure/configs/cloudflare-token-sync.yaml` | `/cert-manager` | `cert-manager/cloudflare-api-token-infisical` | ClusterIssuer `letsencrypt` ([certificates](certificates.md)) |
 | `apps/infisical/r2-sync.yaml` | `/r2` | `infisical/r2-credentials-infisical` | ObjectStore `r2` ([storage](storage.md#backups)) |
 | `apps/infisical/infisical-secrets-sync.yaml` | `/infisical` | `infisical/infisical-secrets-infisical` | Infisical (`kubeSecretRef`), Redis ([infisical](infisical.md)) |
+| `apps/authentik/secrets-sync.yaml` | `/authentik` | `authentik/authentik-secrets-infisical` | Authentik (`existingSecret`) ([authentik](authentik.md)) |
 
 Database passwords aren't here; CloudNativePG generates them ([storage](storage.md#credentials)).
 

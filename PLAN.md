@@ -22,7 +22,8 @@ Kubernetes homelab managed with Flux. This repo is the source of truth.
 5. ✅ **Infisical Operator:** syncs every secret from Infisical Cloud (`homelab` project, machine
    identity `homelab-cluster`, Universal Auth). SOPS holds only the operator's own credentials.
    [secrets](docs/secrets.md)
-6. **Authentik:** SSO for everything, including Infisical.
+6. ✅ **Authentik:** OIDC sign-in for the cluster's own apps at `https://auth.home.jakehulberg.com`
+   ([authentik](docs/authentik.md)). Infisical keeps its own login.
 7. **Apps:** below.
 
 ## To do
