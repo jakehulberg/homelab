@@ -60,12 +60,12 @@ Kubernetes homelab managed with Flux. This repo is the source of truth.
     `cars/` aren't read at runtime.
 - Plant watering app
 - KubeCon demo
-- **Agent orchestration** (after life-dashboard): run my own agents on the cluster.
-  - Cilium for networking and policy (replaces flannel, so the cluster network is reinstalled).
-  - Agent Sandbox for isolated agent pods.
-  - No ServiceAccount token in agent pods.
-  - Infisical Agent Vault as egress proxy, so credentials never sit in the pod.
-  - Resource limits on every agent pod.
+- **Agent orchestration:** run my own agents on the cluster ([airlock](docs/airlock.md)).
+  - ✅ Agent Sandbox `v1.0.8` for isolated agent pods; Airlock claims one per session.
+  - ✅ No ServiceAccount token and resource limits in agent pods.
+  - Agent image and Infisical Agent Vault (to do, below), so credentials never sit in the pod.
+  - Cilium for egress by domain name: deferred. It replaces flannel, so the cluster network is
+    reinstalled, and needs care over Tailscale. Prototype in kind first.
 
 ## Candidates
 

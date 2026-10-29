@@ -14,6 +14,7 @@ Infisical Cloud (homelab project)
   /r2                R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
   /infisical         ENCRYPTION_KEY, AUTH_SECRET, REDIS_PASSWORD, REDIS_URL, SITE_URL
   /authentik         AUTHENTIK_SECRET_KEY
+  /airlock           OIDC_ISSUER_URL, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, AIRLOCK_SESSION_KEY, AIRLOCK_API_TOKEN
         │
         │  Infisical Operator, logged in as machine identity "homelab-cluster"
         ▼
@@ -28,6 +29,7 @@ Kubernetes Secrets, one per folder per app
 | `apps/infisical/r2-sync.yaml` | `/r2` | `infisical/r2-credentials-infisical` | ObjectStore `r2` ([storage](storage.md#backups)) |
 | `apps/infisical/infisical-secrets-sync.yaml` | `/infisical` | `infisical/infisical-secrets-infisical` | Infisical (`kubeSecretRef`), Redis ([infisical](infisical.md)) |
 | `apps/authentik/secrets-sync.yaml` | `/authentik` | `authentik/authentik-secrets-infisical` | Authentik (`existingSecret`) ([authentik](authentik.md)) |
+| `apps/airlock/secrets-sync.yaml` | `/airlock` | `airlock/airlock-secrets-infisical` | Airlock web (all), orchestrator (`AIRLOCK_API_TOKEN`) ([airlock](airlock.md#secrets)) |
 
 Database passwords aren't here; CloudNativePG generates them ([storage](storage.md#credentials)).
 
