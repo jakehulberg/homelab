@@ -1,0 +1,74 @@
+# Infisical Agent Vault proxy: the only thing in the cluster that attaches real
+# credentials. Which hosts it allows is set in Infisical, not here.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-vault-proxy
+  namespace: agent-vault
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent-vault-proxy
+  template:
+    metadata:
+      labels:
+        app: agent-vault-proxy
+    spec:
+      automountServiceAccountToken: false # no Kubernetes API access
+      containers:
+        - name: proxy
+          image: infisical/cli:0.44.9
+          args:
+            - agent-vault
+            - proxy
+            - --port=17323
+            - --domain=http://infisical.infisical.svc.cluster.local:8080 # the cluster's Infisical, in-cluster
+          envFrom:
+            - secretRef:
+                name: agent-vault-secrets-infisical # INFISICAL_AGENT_VAULT_PROXY_TOKEN
+          ports:
+            - name: proxy
+              containerPort: 17323
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-vault-proxy
+  namespace: agent-vault
+spec:
+  selector:
+    app: agent-vault-proxy
+  ports:
+    - name: proxy
+      port: 17323
+      targetPort: proxy
+---
+# Only sandboxes in the agents namespace may use the proxy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-vault-proxy
+  namespace: agent-vault
+spec:
+  podSelector:
+    matchLabels:
+      app: agent-vault-proxy
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: agents
+      ports:
+        - port: 17323
