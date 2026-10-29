@@ -1,0 +1,183 @@
+# Claude Code sandboxes for Airlock. No credentials in the agent container: the
+# session sidecar opens an Agent Vault session and writes proxy settings to /session/env.
+
+# Session settings. Not secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agent-session
+  namespace: agents
+data:
+  INFISICAL_URL: http://infisical.infisical.svc.cluster.local:8080
+  IDENTITY_ID: a56b50e2-2e0c-407a-8f38-616af037a8e0 # Kubernetes Auth identity
+  ACCESS_BUNDLE: airlock
+  PROXY_ADDR: agent-vault-proxy.agent-vault.svc.cluster.local:17323
+  # Proxy CA fingerprint, from the proxy's startup log. Pinned.
+  CA_FINGERPRINT: SHA256:84:78:F1:0C:14:66:7B:AB:3E:6C:3F:CB:9F:67:6B:C4:48:27:E8:B6:55:00:F6:02:81:3E:01:B0:1D:35:13:11
+---
+# Sandbox ServiceAccount: no RBAC, no API token. Bound to the identity's Kubernetes Auth.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coding-agent
+  namespace: agents
+automountServiceAccountToken: false
+---
+apiVersion: extensions.agents.x-k8s.io/v1beta1
+kind: SandboxTemplate
+metadata:
+  name: claude
+  namespace: agents
+spec:
+  podTemplate:
+    spec:
+      serviceAccountName: coding-agent
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000          # the image's "node" user
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # Sidecar (restartPolicy: Always). Session revoked on exit.
+        - name: session
+          image: infisical/cli:0.44.9
+          restartPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: agent-session
+          env:
+            - name: HOME
+              value: /tmp
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              # Kubernetes Auth with the projected token.
+              export INFISICAL_TOKEN="$(infisical login --method=kubernetes \
+                --machine-identity-id="$IDENTITY_ID" \
+                --service-account-token-path=/var/run/infisical/token \
+                --domain="$INFISICAL_URL" --plain --silent)"
+              # Open a session; write the proxy settings to /session/env.
+              exec infisical agent-vault run --domain="$INFISICAL_URL" \
+                --access-bundle "$ACCESS_BUNDLE" --proxy "$PROXY_ADDR" \
+                --ca-fingerprint "$CA_FINGERPRINT" \
+                --ttl 8h --ca-file /session/ca.pem -- sh -c '
+                env | grep -E "^(HTTPS_PROXY|HTTP_PROXY|https_proxy|http_proxy|NO_PROXY|no_proxy|SSL_CERT_FILE|NODE_EXTRA_CA_CERTS|REQUESTS_CA_BUNDLE|CURL_CA_BUNDLE|GIT_SSL_CAINFO)=" \
+                  | awk "{ k=\$0; sub(/=.*/, \"\", k); v=\$0; sub(/^[^=]*=/, \"\", v); printf \"export %s=\\047%s\\047\\n\", k, v }" \
+                  > /session/env.tmp
+                mv /session/env.tmp /session/env
+                trap "exit 0" TERM
+                while :; do sleep 3600 & wait $!; done'
+          startupProbe:
+            exec:
+              command: ["test", "-f", "/session/env"]
+            periodSeconds: 1
+            failureThreshold: 90
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: infisical-token
+              mountPath: /var/run/infisical
+              readOnly: true
+            - name: session
+              mountPath: /session
+      containers:
+        - name: agent
+          image: ghcr.io/jakehulberg/agent-claude:20261029T014954-cb1fa96
+          env:
+            - name: ENV            # proxy settings for interactive shells
+              value: /session/env
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+              ephemeral-storage: 1Gi
+          volumeMounts:
+            - name: session
+              mountPath: /session
+              readOnly: true
+            - name: home           # ~/.claude
+              mountPath: /home/node
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        # Sidecar only. Audience "infisical": not valid for the Kubernetes API.
+        - name: infisical-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: infisical
+                  expirationSeconds: 600
+        - name: session
+          emptyDir:
+            medium: Memory
+        - name: home
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+  # Egress: DNS, the proxy, Infisical. No direct internet.
+  networkPolicy:
+    ingress: []
+    egress:
+      - to:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: kube-system
+            podSelector:
+              matchLabels:
+                k8s-app: kube-dns
+        ports:
+          - protocol: UDP
+            port: 53
+          - protocol: TCP
+            port: 53
+      - to:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: agent-vault
+            podSelector:
+              matchLabels:
+                app: agent-vault-proxy
+        ports:
+          - protocol: TCP
+            port: 17323
+      - to:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: infisical
+        ports:
+          - protocol: TCP
+            port: 8080
+---
+# replicas: 0: sessions open at claim time, not while a sandbox sits idle.
+apiVersion: extensions.agents.x-k8s.io/v1beta1
+kind: SandboxWarmPool
+metadata:
+  name: claude
+  namespace: agents
+  annotations:
+    airlock.jakehulberg.com/description: Claude Code, credentials through Agent Vault
+    # Permission prompts off; the sandbox is the boundary.
+    airlock.jakehulberg.com/task-command: . /session/env; exec claude -p --dangerously-skip-permissions
+spec:
+  replicas: 0
+  sandboxTemplateRef:
+    name: claude

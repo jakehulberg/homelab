@@ -3,4 +3,5 @@ kind: Kustomization
 resources:
   - sandbox.yaml
   - token-reviewer.yaml
+  - claude.yaml
 
