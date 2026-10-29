@@ -46,6 +46,21 @@ Kubernetes homelab managed with Flux. This repo is the source of truth.
   `RuntimeClass` `gvisor`, and set `runtimeClassName: gvisor` in the `SandboxTemplate`
   ([airlock](docs/airlock.md)). Keep sandboxes off the Pi (its kernel uses 16K pages; check gVisor
   support first), e.g. with a node selector.
+- **Airlock with Infisical Agent Vault:** agents call APIs through Agent Vault, which injects
+  credentials at the proxy, so none sit in the sandbox. Today Airlock only sources `/session/env`
+  and has no Infisical support. Needed:
+  - **Who mints session tokens:** the orchestrator, with its own Infisical machine identity, minting
+    a scoped, short-lived Agent Vault session per claim and handing it to the sandbox; or a sidecar
+    in each sandbox pod. Either way the minting identity must stay out of the `agent` container.
+    Airlock code change.
+  - **Agent image:** an `agent` container with the `claude` CLI, replacing busybox in the
+    `SandboxTemplate`.
+  - **Wiring:** `/session/env` with the proxy settings (`HTTPS_PROXY`, its CA) before the first task.
+    Claim-time env forces a cold start instead of a warm sandbox, so write the file after the claim.
+  - **Egress:** a `networkPolicy` on the template allowing only Agent Vault (and DNS), replacing the
+    default internet-only policy.
+  - **Secrets:** the identity's credentials in `/airlock` (or the sandbox's folder), synced by the
+    operator.
 
 ## Apps
 
