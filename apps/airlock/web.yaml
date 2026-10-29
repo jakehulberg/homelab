@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airlock-web
+  namespace: airlock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airlock-web
+  template:
+    metadata:
+      labels:
+        app: airlock-web
+    spec:
+      automountServiceAccountToken: false # web never talks to the Kubernetes API
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: web
+          image: ghcr.io/jakehulberg/airlock-web:20261027T145540-b7e007f # {"$imagepolicy": "flux-system:airlock-web"}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: AIRLOCK_PUBLIC_URL
+              value: https://airlock.home.jakehulberg.com
+            - name: AIRLOCK_ORCHESTRATOR_URL
+              value: http://airlock-orchestrator:8081
+          envFrom:
+            - secretRef:
+                name: airlock-secrets-infisical
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: airlock-web
+  namespace: airlock
+spec:
+  selector:
+    app: airlock-web
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

@@ -1,0 +1,52 @@
+# Watch ghcr.io for new Airlock images. Both components share a tag per commit.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: airlock-orchestrator
+  namespace: flux-system
+spec:
+  image: ghcr.io/jakehulberg/airlock-orchestrator
+  interval: 5m
+  secretRef:
+    name: ghcr-pull
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: airlock-orchestrator
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: airlock-orchestrator
+  filterTags:
+    pattern: '^(?P<ts>[0-9]{8}T[0-9]{6})-[0-9a-f]{7}$'
+    extract: '$ts'
+  policy:
+    alphabetical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: airlock-web
+  namespace: flux-system
+spec:
+  image: ghcr.io/jakehulberg/airlock-web
+  interval: 5m
+  secretRef:
+    name: ghcr-pull
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: airlock-web
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: airlock-web
+  filterTags:
+    pattern: '^(?P<ts>[0-9]{8}T[0-9]{6})-[0-9a-f]{7}$'
+    extract: '$ts'
+  policy:
+    alphabetical:
+      order: asc

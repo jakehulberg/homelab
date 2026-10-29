@@ -1,0 +1,123 @@
+# The orchestrator is the only part of Airlock that talks to the Kubernetes API,
+# and only in the agents namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: airlock-orchestrator
+  namespace: airlock
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: airlock-orchestrator
+  namespace: agents
+rules:
+  - apiGroups: [extensions.agents.x-k8s.io]
+    resources: [sandboxclaims]
+    verbs: [get, list, create, delete]
+  - apiGroups: [extensions.agents.x-k8s.io]
+    resources: [sandboxwarmpools]
+    verbs: [get, list]
+  - apiGroups: [agents.x-k8s.io]
+    resources: [sandboxes]
+    verbs: [get]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list]
+  - apiGroups: [""]
+    resources: [pods/exec]
+    verbs: [get, create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: airlock-orchestrator
+  namespace: agents
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: airlock-orchestrator
+subjects:
+  - kind: ServiceAccount
+    name: airlock-orchestrator
+    namespace: airlock
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airlock-orchestrator
+  namespace: airlock
+spec:
+  replicas: 1 # task output lives in memory
+  selector:
+    matchLabels:
+      app: airlock-orchestrator
+  template:
+    metadata:
+      labels:
+        app: airlock-orchestrator
+    spec:
+      serviceAccountName: airlock-orchestrator
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: orchestrator
+          image: ghcr.io/jakehulberg/airlock-orchestrator:20261027T145540-b7e007f # {"$imagepolicy": "flux-system:airlock-orchestrator"}
+          ports:
+            - name: http
+              containerPort: 8081
+          env:
+            - name: AIRLOCK_NAMESPACE
+              value: agents
+            - name: AIRLOCK_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: airlock-secrets-infisical
+                  key: AIRLOCK_API_TOKEN   # only the token, not the OIDC settings
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: airlock-orchestrator
+  namespace: airlock
+spec:
+  selector:
+    app: airlock-orchestrator
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http
+---
+# Only the web app may call the orchestrator.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: airlock-orchestrator
+  namespace: airlock
+spec:
+  podSelector:
+    matchLabels:
+      app: airlock-orchestrator
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: airlock-web
+      ports:
+        - port: 8081

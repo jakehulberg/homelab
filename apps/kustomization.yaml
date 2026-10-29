@@ -6,4 +6,5 @@ resources:
   - life-dashboard
   - authentik
   - agents
+  - airlock
 
