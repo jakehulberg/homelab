@@ -5,3 +5,4 @@ resources:
   - life-dashboard.yaml
   - image-policy.yaml
   - litestream.yaml
+  - httproute.yaml

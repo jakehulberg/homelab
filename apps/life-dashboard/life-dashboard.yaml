@@ -119,18 +119,3 @@ spec:
       port: 3000
       targetPort: http
 ---
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: life-dashboard
-  namespace: life-dashboard
-spec:
-  parentRefs:
-    - name: traefik-gateway
-      namespace: traefik
-  hostnames:
-    - life.home.jakehulberg.com
-  rules:
-    - backendRefs:
-        - name: life-dashboard
-          port: 3000
