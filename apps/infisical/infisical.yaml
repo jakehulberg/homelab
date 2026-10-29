@@ -24,6 +24,9 @@ spec:
   values:
     infisical:
       replicaCount: 1                # chart default is 2 at up to 1GB each; one is plenty here
+      image:                         # pinned here so Renovate bumps the app, not just the chart
+        repository: infisical/infisical
+        tag: "v0.167.0"
       fullnameOverride: infisical    # otherwise the Service is "infisical-infisical-standalone-infisical"
       kubeSecretRef: infisical-secrets-infisical #read settings from the Infisical-synced secret
     postgresql:

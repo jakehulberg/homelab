@@ -4,6 +4,7 @@
   "minimumReleaseAge": "3 days",
   "flux": { "managerFilePatterns": ["/\\.ya?ml$/"] },
   "kubernetes": { "managerFilePatterns": ["/\\.ya?ml$/"] },
+  "helm-values": { "managerFilePatterns": ["/\\.ya?ml$/"] },
   "packageRules": [
     {
       "description": "Flux's own manifests are upgraded as one set by the flux manager, not image by image",
