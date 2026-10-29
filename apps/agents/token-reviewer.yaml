@@ -1,0 +1,29 @@
+# Lets the cluster's Infisical verify sandbox ServiceAccount tokens (Kubernetes Auth).
+# Its only permission is TokenReview.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: infisical-token-reviewer
+  namespace: infisical
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: infisical-token-reviewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: infisical-token-reviewer
+    namespace: infisical
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: infisical-token-reviewer
+  namespace: infisical
+  annotations:
+    kubernetes.io/service-account.name: infisical-token-reviewer
+type: kubernetes.io/service-account-token  # Kubernetes fills in the token
