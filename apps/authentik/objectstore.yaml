@@ -1,0 +1,19 @@
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: r2
+  namespace: authentik
+spec:
+  retentionPolicy: "30d"                                       # delete backups older than 30 days
+  configuration:
+    destinationPath: s3://homelab-postgres-backups/authentik   # bucket, then a folder per app
+    endpointURL: https://e8dc2af5d31bf4e016b6fab1e2515a27.r2.cloudflarestorage.com
+    s3Credentials:
+      accessKeyId:
+        name: r2-credentials-authentik
+        key: R2_ACCESS_KEY_ID
+      secretAccessKey:
+        name: r2-credentials-authentik
+        key: R2_SECRET_ACCESS_KEY
+    wal:
+      compression: gzip

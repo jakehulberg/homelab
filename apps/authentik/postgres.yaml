@@ -9,10 +9,16 @@ metadata:
   name: authentik-db
   namespace: authentik
 spec:
-  instances: 1          # one is enough to start; R2 backups come later
+  instances: 1          # one is enough to start
   storage:
     size: 2Gi
   bootstrap:
     initdb:
       database: authentik
       owner: authentik  # password lands in the authentik-db-app Secret
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true #stream Every change log to r2 as it happens 
+      parameters:
+        barmanObjectName: r2   
+  primaryUpdateMethod: switchover
