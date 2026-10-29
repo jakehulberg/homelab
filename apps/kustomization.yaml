@@ -7,4 +7,5 @@ resources:
   - authentik
   - agents
   - airlock
+  - agent-vault
 
