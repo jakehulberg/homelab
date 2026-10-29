@@ -92,7 +92,7 @@ spec:
               mountPath: /session
       containers:
         - name: agent
-          image: ghcr.io/jakehulberg/agent-claude:20261029T014954-cb1fa96
+          image: ghcr.io/jakehulberg/agent-claude:20261029T142925-ba63712
           env:
             - name: ENV            # proxy settings for interactive shells
               value: /session/env
@@ -175,8 +175,8 @@ metadata:
   namespace: agents
   annotations:
     airlock.jakehulberg.com/description: Claude Code, credentials through Agent Vault
-    # Permission prompts off; the sandbox is the boundary.
-    airlock.jakehulberg.com/task-command: . /session/env; exec claude -p --dangerously-skip-permissions
+    # Permission prompts off; the sandbox is the boundary. --continue after the first task.
+    airlock.jakehulberg.com/task-command: . /session/env; [ -d ~/.claude/projects ] && set -- --continue; exec claude -p --dangerously-skip-permissions "$@"
 spec:
   replicas: 0
   sandboxTemplateRef:
