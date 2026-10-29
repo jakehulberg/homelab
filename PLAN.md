@@ -40,6 +40,12 @@ Kubernetes homelab managed with Flux. This repo is the source of truth.
   it ([storage](docs/storage.md#restore-not-yet-tested)).
 - **Ethernet for the minis:** Wi-Fi latency between nodes is 60 to 280ms with spikes, even on
   direct paths (vzNAT). Wiring cuts that and allows bridged networking.
+- **gVisor for agent sandboxes:** run sandbox pods under gVisor (`runsc`) instead of runc, so an
+  agent's syscalls hit gVisor's user-space kernel rather than the node's. Install `runsc` and its
+  containerd shim in each mini's VM, add a `runsc` runtime to k3s's containerd config, add a
+  `RuntimeClass` `gvisor`, and set `runtimeClassName: gvisor` in the `SandboxTemplate`
+  ([airlock](docs/airlock.md)). Keep sandboxes off the Pi (its kernel uses 16K pages; check gVisor
+  support first), e.g. with a node selector.
 
 ## Apps
 
