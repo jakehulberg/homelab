@@ -31,6 +31,7 @@ metadata:
 spec:
   podTemplate:
     spec:
+      runtimeClassName: gvisor #gVisor kernel instead of the node's kernel.
       serviceAccountName: coding-agent
       automountServiceAccountToken: false
       securityContext:
