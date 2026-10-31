@@ -62,7 +62,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: orchestrator
-          image: ghcr.io/jakehulberg/airlock-orchestrator:20261029T151720-c54f7f9 # {"$imagepolicy": "flux-system:airlock-orchestrator"}
+          image: ghcr.io/jakehulberg/airlock-orchestrator:20261031T013657-c6786a3 # {"$imagepolicy": "flux-system:airlock-orchestrator"}
           ports:
             - name: http
               containerPort: 8081
