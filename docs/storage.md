@@ -20,6 +20,7 @@ has only 15GiB, so watch databases that land there.
 | Database | App | Namespace | Instances | Backups |
 |---|---|---|---|---|
 | `infisical-db` | Infisical | `infisical` | 2 | R2 `s3://homelab-postgres-backups/infisical`, continuous + daily 03:00, 30 days |
+| `authentik-db` | Authentik | `authentik` | 1 | R2 `s3://homelab-postgres-backups/authentik`, continuous + daily 03:00, 30 days |
 | `finance.db`, `tasks.db` (SQLite) | life-dashboard | `life-dashboard` | 1 | Litestream to R2 `life-dashboard/`, SSE-C encrypted, continuous + daily snapshot, 30 days |
 
 The demo Infisical on mini3 (Docker) has its own Postgres outside the cluster.

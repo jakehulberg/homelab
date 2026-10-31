@@ -72,7 +72,7 @@ and the client secret in the app's Infisical folder.
 |---|---|---|
 | Airlock | `airlock` | `https://airlock.home.jakehulberg.com/callback` ([airlock](airlock.md)) |
 
-## To do
+## Backups
 
-- Back up `authentik-db` to R2 like `infisical-db` ([storage](storage.md#backups)). Today, losing
-  the node that holds it loses users and OIDC clients.
+`authentik-db` streams to R2 like `infisical-db`: `apps/authentik/objectstore.yaml`,
+`scheduled-backup.yaml` and `r2-sync.yaml` ([storage](storage.md#databases)).
