@@ -8,4 +8,5 @@ resources:
   - agents
   - airlock
   - agent-vault
+  - monitoring
 
