@@ -26,6 +26,7 @@ Before merging:
 |---|---|---|
 | Gateway API CRDs | `infrastructure/controllers/gateway-api/standard-install.yaml` (downloaded) | Overwrite with the new release's `standard-install.yaml` |
 | Agent Sandbox | `infrastructure/controllers/agent-sandbox/sandbox-with-extensions.yaml` (downloaded) | Overwrite with the new release's `sandbox-with-extensions.yaml`. Airlock needs the `v1beta1` API. |
+| Prometheus Operator CRDs | `infrastructure/controllers/prometheus-operator-crds/crds.yaml` (downloaded) | When Renovate bumps kube-prometheus-stack, overwrite with `stripped-down-crds.yaml` from the operator release matching the chart's `APP VERSION` (`helm search repo prometheus-community/kube-prometheus-stack`). Push with or before the chart bump. |
 | k3s | Each node; version in `docs/nodes.md` | Reinstall with the new `INSTALL_K3S_VERSION`, one node at a time ([nodes](nodes.md#taking-a-node-down)); later, Rancher's system-upgrade-controller |
 | Lima VM image | `lima/*.yaml` | Only affects new VMs; existing VMs update through their OS |
 
