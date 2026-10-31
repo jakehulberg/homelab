@@ -7,4 +7,5 @@ resources:
   - cloudnative-pg
   - infisical-operator
   - agent-sandbox
+  - prometheus-operator-crds
 

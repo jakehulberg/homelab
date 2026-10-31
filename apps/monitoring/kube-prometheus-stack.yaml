@@ -22,10 +22,12 @@ spec:
         kind: HelmRepository
         name: prometheus-community
   install:
-    crds: Create
+    crds: Skip         # CRDS comr from infrastructure/controllers/prometheus-operator-crds
   upgrade:
-    crds: CreateReplace          # chart upgrades also update its CRDs
+    crds: Skip         
   values:
+    crds:
+      enabled: false
     # Built into the k3s process; the chart's default scrapers can't reach them.
     kubeControllerManager:
       enabled: false
