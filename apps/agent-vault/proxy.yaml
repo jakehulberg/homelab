@@ -18,7 +18,7 @@ spec:
       automountServiceAccountToken: false # no Kubernetes API access
       containers:
         - name: proxy
-          image: infisical/cli:0.44.9
+          image: infisical/cli:0.44.10
           args:
             - agent-vault
             - proxy
