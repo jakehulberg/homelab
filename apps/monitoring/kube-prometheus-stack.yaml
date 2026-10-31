@@ -47,7 +47,7 @@ spec:
         retention: 10d
         retentionSize: 4GB       # oldest data dropped past this
         nodeSelector:
-          kubernetes.io/hostname: k3s-mini2   # most RAM and disk; mini1 has 15GiB
+          kubernetes.io/hostname: k3s-mini2   # most RAM 
         resources:
           requests:
             memory: 512Mi
@@ -64,3 +64,9 @@ spec:
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
         ruleSelectorNilUsesHelmValues: false
+    prometheus-node-exporter:         
+      prometheus:                    
+        monitor:                       
+          relabelings:                 
+            - sourceLabels: [__meta_kubernetes_pod_node_name]
+              targetLabel: instance  
