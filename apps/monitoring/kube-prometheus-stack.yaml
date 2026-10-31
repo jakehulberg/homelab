@@ -36,7 +36,28 @@ spec:
     kubeEtcd:
       enabled: false
     alertmanager:
-      enabled: false             # later, with somewhere to send alerts
+      alertmanagerSpec:
+        secrets:
+          - alertmanager-ntfy    # mounted at /etc/alertmanager/secrets/alertmanager-ntfy/
+      config:
+        route:
+          receiver: ntfy
+          group_by: [alertname, namespace]
+          group_wait: 30s        # wait for related alerts, send them together
+          group_interval: 5m
+          repeat_interval: 12h   # re-send a still-firing alert twice a day
+          routes:
+            # Always-firing heartbeat and info-level alerts: no push.
+            - receiver: "null"
+              matchers: ['alertname=~"Watchdog|InfoInhibitor"']
+            - receiver: "null"
+              matchers: ['severity="info"']
+        receivers:
+          - name: "null"
+          - name: ntfy
+            webhook_configs:
+              - url_file: /etc/alertmanager/secrets/alertmanager-ntfy/NTFY_URL
+                send_resolved: true    # also push when it's fixed
     grafana:
       admin:
         existingSecret: grafana-admin
