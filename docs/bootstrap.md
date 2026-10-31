@@ -245,3 +245,42 @@ the SOPS file ([secrets](secrets.md#rotate-the-operators-credentials)).
 kubectl get infisicalauth -n infisical-operator-system   # READY True
 kubectl get infisicalstaticsecret -A
 ```
+
+## 11. gVisor on the minis
+
+Agent sandboxes run under gVisor (`RuntimeClass` `gvisor`, [airlock](airlock.md#isolation)). The
+runtime lives on each VM, not in git, so a rebuilt VM needs this before sandboxes can schedule
+there. Minis only; the Pi doesn't run sandboxes.
+
+**a. Install `runsc`** (in each mini's VM, `limactl shell k3s-miniN`):
+
+```sh
+curl -fsSL https://gvisor.dev/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/gvisor-archive-keyring.gpg
+echo "deb [arch=arm64 signed-by=/usr/share/keyrings/gvisor-archive-keyring.gpg] https://storage.googleapis.com/gvisor/releases release main" | sudo tee /etc/apt/sources.list.d/gvisor.list
+sudo apt-get update && sudo apt-get install -y runsc
+```
+
+Installs `runsc` and `containerd-shim-runsc-v1`. k3s doesn't detect gVisor on its own.
+
+**b. Add the runtime to containerd.** `{{ template "base" . }}` keeps k3s's defaults; k3s renders
+`config.toml` from this template on start.
+
+```sh
+sudo tee /var/lib/rancher/k3s/agent/etc/containerd/config-v3.toml.tmpl <<'EOF'
+{{ template "base" . }}
+
+[plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.'runsc']
+  runtime_type = "io.containerd.runsc.v1"
+EOF
+sudo systemctl restart k3s
+sudo grep -A1 "runtimes.'runsc'" /var/lib/rancher/k3s/agent/etc/containerd/config.toml
+```
+
+One mini at a time: wait for `Ready` in `kubectl get nodes` before the next, so etcd keeps quorum.
+
+**c. Check** (laptop, with a claimed sandbox):
+
+```sh
+kubectl exec -n agents <pod> -c agent -- dmesg | head -1   # [    0.000000] Starting gVisor...
+```
+

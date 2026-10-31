@@ -40,12 +40,6 @@ Kubernetes homelab managed with Flux. This repo is the source of truth.
   it ([storage](docs/storage.md#restore-not-yet-tested)).
 - **Ethernet for the minis:** Wi-Fi latency between nodes is 60 to 280ms with spikes, even on
   direct paths (vzNAT). Wiring cuts that and allows bridged networking.
-- **gVisor for agent sandboxes:** run sandbox pods under gVisor (`runsc`) instead of runc, so an
-  agent's syscalls hit gVisor's user-space kernel rather than the node's. Install `runsc` and its
-  containerd shim in each mini's VM, add a `runsc` runtime to k3s's containerd config, add a
-  `RuntimeClass` `gvisor`, and set `runtimeClassName: gvisor` in the `SandboxTemplate`
-  ([airlock](docs/airlock.md)). Keep sandboxes off the Pi (its kernel uses 16K pages; check gVisor
-  support first), e.g. with a node selector.
 - **Airlock with Infisical Agent Vault:** agents call APIs through Agent Vault, which injects
   credentials at the proxy, so none sit in the sandbox. Today Airlock only sources `/session/env`
   and has no Infisical support. Needed:
@@ -84,6 +78,7 @@ Kubernetes homelab managed with Flux. This repo is the source of truth.
 - **Agent orchestration:** run my own agents on the cluster ([airlock](docs/airlock.md)).
   - ✅ Agent Sandbox `v1.0.8` for isolated agent pods; Airlock claims one per session.
   - ✅ No ServiceAccount token and resource limits in agent pods.
+  - ✅ gVisor runtime for sandbox pods, on the minis only ([airlock](docs/airlock.md#gvisor)).
   - Agent image and Infisical Agent Vault (to do, below), so credentials never sit in the pod.
   - Cilium for egress by domain name: deferred. It replaces flannel, so the cluster network is
     reinstalled, and needs care over Tailscale. Prototype in kind first.
