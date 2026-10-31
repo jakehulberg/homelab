@@ -55,6 +55,19 @@ Kubernetes homelab managed with Flux. This repo is the source of truth.
     default internet-only policy.
   - **Secrets:** the identity's credentials in `/airlock` (or the sandbox's folder), synced by the
     operator.
+- **Renovate PR reviewer:** a daily agent run that reviews open Renovate PRs across my repos. It
+  reads each diff, the release notes and CI status, checks how the repo uses the dependency, then
+  approves, comments with needed changes, or flags majors for me. Start comment-only; later allow
+  merging patch updates with green CI. Needed:
+  - **GitHub through Agent Vault:** fine-grained token (contents read, pull requests read/write) on
+    the repos, `api.github.com` and `github.com` in a bundle. `gh` in the agent image with a
+    placeholder `GH_TOKEN`.
+  - **Pool:** a `reviewer` SandboxTemplate and pool with its own access bundle (GitHub, Anthropic).
+  - **Instructions:** prompt or `CLAUDE.md`: what counts as safe, what never to merge.
+  - **Trigger:** a `CronJob` in `airlock` that claims a sandbox through the orchestrator API, sends
+    the prompt, waits, and releases. Needs its own orchestrator token and a NetworkPolicy rule on
+    the orchestrator. In-cluster so the orchestrator stays private; no webhook, since GitHub can't
+    reach the cluster.
 
 ## Apps
 
