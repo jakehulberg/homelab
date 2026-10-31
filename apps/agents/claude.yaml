@@ -43,7 +43,7 @@ spec:
       initContainers:
         # Sidecar (restartPolicy: Always). Session revoked on exit.
         - name: session
-          image: infisical/cli:0.44.9
+          image: infisical/cli:0.44.10
           restartPolicy: Always
           envFrom:
             - configMapRef:
