@@ -18,7 +18,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: web
-          image: ghcr.io/jakehulberg/airlock-web:20261031T013717-eda286f # {"$imagepolicy": "flux-system:airlock-web"}
+          image: ghcr.io/jakehulberg/airlock-web:20261031T013903-6c10ec3 # {"$imagepolicy": "flux-system:airlock-web"}
           ports:
             - name: http
               containerPort: 8080
