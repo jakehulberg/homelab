@@ -25,4 +25,4 @@ spec:
     kind: OCIRepository  # use the chart fetched above
     name: podinfo
   values:                # same as a Helm values.yaml
-    replicaCount: 1
+    replicaCount: 3
