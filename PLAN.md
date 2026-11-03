@@ -33,7 +33,18 @@ Kubernetes homelab managed with Flux. This repo is the source of truth.
 - **life-dashboard on Postgres:** move from SQLite to CloudNativePG for replicas and shared backups.
   ~205 sync `better-sqlite3` calls across 25 files go async, plus SQL dialect fixes and a data
   migration.
-- **Monitoring:** kube-prometheus-stack (Prometheus, Grafana) plus Loki. Needs 1 to 2GB RAM.
+- **Custom alerts:** kube-prometheus-stack runs at `grafana.home.jakehulberg.com` (`apps/monitoring/`),
+  and Alertmanager pushes warning and critical alerts to ntfy. The built-in rules cover disks, crash
+  loops and nodes, not backups, certificates or Flux. Add `apps/monitoring/alerts.yaml`
+  (`PrometheusRule`s; the CRDs are in `infrastructure/`, so rebuilds work), one at a time:
+  - **Certificates:** `prometheus.servicemonitor.enabled: true` in the cert-manager values, then
+    `CertificateExpiringSoon` (under 14 days, from `certmanager_certificate_expiration_timestamp_seconds`)
+    and `CertificateNotReady`.
+  - **Postgres backups:** CNPG metrics via a `PodMonitor`, then `PostgresBackupStale` (no backup in
+    26h) and `PostgresWALArchivingFailing`, for `infisical-db` and `authentik-db`.
+  - **Flux:** a `PodMonitor` for the controllers (port `http-prom`) plus kube-state-metrics custom
+    resource config for `gotk_resource_info`, then `FluxReconcileFailing` (not Ready for 15m).
+- **Logs:** Loki, queried from Grafana.
 - **Power-loss test:** reboot a mini without logging in; confirm the node returns `Ready` (Lima
   autostart may need a logged-in user).
 - **Restore drill:** restore `infisical-db` from R2 into a new Cluster and point a test Infisical at
