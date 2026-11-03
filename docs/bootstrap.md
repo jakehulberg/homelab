@@ -64,7 +64,7 @@ read -s K3S_TOKEN && export K3S_TOKEN
 **c. Install.** mini1 creates the cluster:
 
 ```sh
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 sh -s - server \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.37.1+k3s1 sh -s - server \
   --cluster-init \
   --node-name k3s-mini1 \
   --node-ip "$(tailscale ip -4)"
@@ -73,7 +73,7 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 sh -s - server \
 mini2 and mini3 join (`k3s-mini3` on mini3):
 
 ```sh
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 sh -s - server \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.37.1+k3s1 sh -s - server \
   --server https://k3s-mini1:6443 \
   --node-name k3s-mini2 \
   --node-ip "$(tailscale ip -4)"
@@ -117,7 +117,7 @@ read -s K3S_TOKEN && export K3S_TOKEN
 **e. Install as agent** (Pi):
 
 ```sh
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.36.5+k3s1 K3S_URL=https://k3s-mini1:6443 sh -s - agent \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.37.1+k3s1 K3S_URL=https://k3s-mini1:6443 sh -s - agent \
   --node-name pi \
   --node-ip "$(tailscale ip -4)"
 ```

@@ -10,7 +10,7 @@
 Servers run the control plane (API server, scheduler, embedded etcd) plus workloads. Three servers
 survive losing any one mini.
 
-k3s `v1.36.5+k3s1` on every node (`INSTALL_K3S_VERSION=v1.36.5+k3s1`).
+k3s `v1.37.1+k3s1` on every node (`INSTALL_K3S_VERSION=v1.37.1+k3s1`).
 
 ## Hosts
 
@@ -65,3 +65,18 @@ kubectl get cluster -A               # all database instances ready
 ```
 
 Update the matching `lima/` file so the repo stays the source of truth.
+
+## Upgrading k3s
+
+Rerun each node's install command from [bootstrap](bootstrap.md#5-install-k3s) with the new
+`INSTALL_K3S_VERSION`: mini1, mini2, mini3, then the Pi. One node at a time; wait for `Ready` on the
+new version in `kubectl get nodes` before the next. No drain: containers keep running while k3s
+restarts. The containerd template for gVisor and `/etc/rancher/k3s/config.yaml.d/` are kept.
+
+- **In the VM**, not on the Mac: `limactl shell k3s-miniN` first (the prompt shows `lima-k3s-miniN`).
+- **Token first, on its own.** The installer rewrites the service's env file, and the Pi's agent
+  can't rejoin without `K3S_TOKEN`. Check `echo ${#K3S_TOKEN}` prints about 140 before installing.
+  The token is in any server VM at `/var/lib/rancher/k3s/server/token`: copy the whole line.
+- **While mini1 restarts**, kubectl (pointed at `k3s-mini1`) fails; use
+  `kubectl --server https://k3s-mini2:6443 get nodes`.
+- Then update the version here and in [bootstrap](bootstrap.md).
