@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - secrets-sync.yaml
   - kagent.yaml
+  - httproute.yaml
