@@ -56,6 +56,12 @@ Kubernetes homelab managed with Flux. This repo is the source of truth.
   kernel, so an escape from `agent` into the sidecar reaches its Infisical access token. Have the
   orchestrator (or a broker) open the session per claim and pass only the session in; then drop
   the sandbox's egress to Infisical. Airlock code change.
+- **kagent through Agent Vault:** the POC reads `ANTHROPIC_API_KEY` from Infisical Cloud into a
+  Secret, so the key sits in the agent pod's environment. The Agent CRD allows `env`, `volumes` and
+  `extraContainers`, so the session sidecar fits, and the Go runtime honors `HTTPS_PROXY` and
+  `SSL_CERT_FILE`. Blocker: the sidecar writes the proxy settings to `/session/env` at runtime, and
+  kagent's container reads its environment only at startup. Needs a wrapper entrypoint or a fixed
+  proxy address; the ModelConfig key becomes a placeholder.
 - **Renovate PR reviewer:** a daily agent run that reviews open Renovate PRs across my repos. It
   reads each diff, the release notes and CI status, checks how the repo uses the dependency, then
   approves, comments with needed changes, or flags majors for me. Start comment-only; later allow
