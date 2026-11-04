@@ -46,6 +46,9 @@ Which hosts are allowed, and which credential each gets, is set in Infisical, no
 every start it loads its settings and CA with `INFISICAL_AGENT_VAULT_PROXY_TOKEN`, from Infisical
 Cloud `/agent-vault`.
 
+The token comes from creating the proxy in the cluster Infisical UI. It's long-lived, so it's
+stored in Cloud `/agent-vault` and synced, not minted at runtime.
+
 ```
 Infisical Cloud /agent-vault ──operator──▶ agent-vault-secrets-infisical ──envFrom──▶ proxy
                                                                                         │
