@@ -9,4 +9,5 @@ resources:
   - agent-sandbox
   - prometheus-operator-crds
   - kagent-crds
+  - agentgateway
 
