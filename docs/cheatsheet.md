@@ -1,7 +1,5 @@
 # Cheatsheet
 
-Most used: `flux get all -A` and `kubectl get pods -A`.
-
 ## Is everything healthy?
 
 ```sh
@@ -23,7 +21,7 @@ limactl start k3s-mini1
 limactl stop k3s-mini1
 ```
 
-Resizing a VM: [nodes](nodes.md#taking-a-node-down).
+More in [nodes](nodes.md#taking-a-node-down).
 
 ## kubectl
 
@@ -49,13 +47,12 @@ flux get all -A                                          # everything Flux manag
 flux get helmreleases -A
 flux reconcile kustomization flux-system --with-source   # apply the latest push now
 flux reconcile helmrelease <name> -n <ns>                # retry one chart
-flux suspend kustomization apps                          # stop Flux undoing a manual change
+flux suspend kustomization apps                          # stop Flux reverting manual changes
 flux resume kustomization apps                           # hand control back
 flux logs                                                # controller logs, when something isn't Ready
 ```
 
-To change the cluster, commit and push here; Flux applies it within a minute
-([gitops](gitops.md)). Anything changed by hand with `kubectl` is reverted unless suspended.
+More in [gitops](gitops.md).
 
 ## Helm
 
@@ -74,8 +71,7 @@ kubectl get infisicalauth -n infisical-operator-system            # operator log
 infisical run --env=dev --path=/ -- sops -d <file>.sops.yaml      # read a SOPS file
 ```
 
-Secrets live in Infisical Cloud; a change there lands within 60 seconds
-([secrets](secrets.md)).
+More in [secrets](secrets.md).
 
 ## Certificates
 
@@ -91,12 +87,12 @@ More in [certificates](certificates.md#troubleshooting).
 ## Databases (CloudNativePG)
 
 ```sh
-kubectl get cluster -A                    # STATUS, READY 2/2, PRIMARY
+kubectl get cluster -A                    # STATUS, READY, PRIMARY
 kubectl get backup -A                     # PHASE completed
 kubectl get pvc -A                        # volumes and sizes
 ```
 
-Backups and failover: [storage](storage.md).
+More in [storage](storage.md).
 
 ## Nodes
 
@@ -105,7 +101,7 @@ kubectl drain <node> --ignore-daemonsets --delete-emptydir-data   # before maint
 kubectl uncordon <node>                                           # after
 ```
 
-Promote a database copy off the node first ([nodes](nodes.md#taking-a-node-down)).
+Promote database primaries off the node first ([nodes](nodes.md#taking-a-node-down)).
 
 ## Agent sandboxes
 
@@ -116,9 +112,10 @@ kubectl logs -n agents <pod> -c session                 # Agent Vault login and 
 kubectl logs -n agent-vault deploy/agent-vault-proxy
 ```
 
-See [airlock](airlock.md) and [agent vault](agent-vault.md).
+More in [airlock](airlock.md) and [agent vault](agent-vault.md).
 
 ## zsh
 
-Pasting commands with `#` comments into zsh needs `setopt interactive_comments` in `~/.zshrc`;
-otherwise copy without the comments.
+```sh
+setopt interactive_comments   # in ~/.zshrc, so pasted commands with # comments run
+```
