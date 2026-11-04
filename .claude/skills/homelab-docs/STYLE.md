@@ -218,7 +218,7 @@ If you wouldn't say a sentence that way to someone next to you, rewrite it.
 
 | Rule | Check |
 |---|---|
-| No em dashes. Use a comma, colon, parentheses or period | `grep -n "—" <file>` prints nothing |
+| No em dashes. Use a comma, colon, parentheses or period | `grep -n $'\xe2\x80\x94' <file>` prints nothing |
 | Sentence case headings | Read every `#` line |
 | Bold only for labels: list-item labels (`**Repo:**`), troubleshooting symptoms, UI labels, and at most one must-not-miss warning per page | Read every `**` |
 | Code spans for anything typed or read in code: paths, names, flags, values | Read each line |
