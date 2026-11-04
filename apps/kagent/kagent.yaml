@@ -1,0 +1,51 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: kagent
+  namespace: kagent
+spec:
+  interval: 1h
+  url: oci://ghcr.io/kagent-dev/kagent/helm/kagent
+  ref:
+    tag: "0.10.4"
+  layerSelector:
+    mediaType: "application/vnd.cncf.helm.chart.content.v1.tar+gzip"
+    operation: copy
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kagent
+  namespace: kagent
+spec:
+  interval: 10m
+  chartRef:
+    kind: OCIRepository
+    name: kagent
+  install:
+    crds: Skip                 # from infrastructure/controllers/kagent-crds
+  upgrade:
+    crds: Skip
+  values:
+    providers:
+      default: anthropic
+      anthropic:
+        provider: Anthropic
+        model: claude-sonnet-5-5
+        apiKeySecretRef: kagent-anthropic
+        apiKeySecretKey: ANTHROPIC_API_KEY
+    kagent-tools:
+      rbac:
+        readOnly: true         # get/list/watch, no Secrets; the chart's default is cluster-admin
+      tools:
+        args: ["--read-only"]  # tools refuse write operations too
+    # Only k8s-agent and promql-agent.
+    kgateway-agent: {enabled: false}
+    istio-agent: {enabled: false}
+    observability-agent: {enabled: false}
+    argo-rollouts-agent: {enabled: false}
+    helm-agent: {enabled: false}
+    cilium-policy-agent: {enabled: false}
+    cilium-manager-agent: {enabled: false}
+    cilium-debug-agent: {enabled: false}
+    grafana-mcp: {enabled: false}
