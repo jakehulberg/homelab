@@ -7,12 +7,12 @@ k3s on three Mac minis and a Raspberry Pi, managed by Flux. Change the cluster b
 | Path | What |
 |---|---|
 | `lima/` | VM definitions for the minis |
-| `k3s/` | k3s config copied onto each node |
-| `clusters/homelab/` | Flux entrypoint: Flux itself plus pointers to the folders below |
-| `infrastructure/controllers/` | Shared software, applied first (Gateway API, Traefik, cert-manager, CloudNativePG, Infisical Operator, Agent Sandbox) |
-| `infrastructure/configs/` | Their configuration, applied second (Let's Encrypt issuer, certificate, Infisical Cloud connection) |
+| `k3s/` | k3s config copied onto each node (`server.yaml` on the minis only) |
+| `clusters/homelab/` | Flux entrypoint: Flux itself, the Kustomizations that apply the folders below, and image update automation |
+| `infrastructure/controllers/` | Shared software, applied first (Gateway API, Traefik, cert-manager, CloudNativePG, Infisical Operator, Agent Sandbox, Prometheus Operator CRDs) |
+| `infrastructure/configs/` | Configuration for those controllers, applied second (Let's Encrypt issuer, wildcard certificate, Infisical Cloud connection, Cloudflare token sync) |
 | `apps/` | Apps, applied last |
-| `*/experiments/` | Things I'm trying out, not recommendations (kagent, agentgateway). See [apps/experiments](apps/experiments/README.md) |
+| `*/experiments/` | Software Jake is trying out, not recommendations (kagent, agentgateway). See [apps/experiments](apps/experiments/README.md) |
 | `.sops.yaml` | Which files SOPS encrypts, and with which public key |
 | `docs/` | Documentation |
 
