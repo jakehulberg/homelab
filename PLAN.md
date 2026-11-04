@@ -96,6 +96,18 @@ Kubernetes homelab managed with Flux. This repo is the source of truth.
   - Cilium for egress by domain name: deferred. It replaces flannel, so the cluster network is
     reinstalled, and needs care over Tailscale. Prototype in kind first.
 
+## Experiments
+
+Trying out, not recommending. Lives in `infrastructure/controllers/experiments/` and
+`apps/experiments/`, labeled `homelab.jakehulberg.com/experiment: "true"`
+([apps/experiments](apps/experiments/README.md)).
+
+- ✅ **kagent** `0.10.4`: `k8s-agent` and `promql-agent`, read-only tools, bundled Postgres, UI at
+  `kagent.home.jakehulberg.com` with no login (tailnet only).
+- **agentgateway** `v1.7.0`: in-cluster Gateway holding the Anthropic key; next, point kagent's
+  ModelConfig at it (`anthropic.baseUrl`, no key) and drop `/kagent` from Infisical.
+- kagent `1.0` and `SandboxAgent`: could it replace Airlock?
+
 ## Candidates
 
 - **Code:** Gitea or Forgejo

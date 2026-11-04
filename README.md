@@ -12,6 +12,7 @@ k3s on three Mac minis and a Raspberry Pi, managed by Flux. Change the cluster b
 | `infrastructure/controllers/` | Shared software, applied first (Gateway API, Traefik, cert-manager, CloudNativePG, Infisical Operator, Agent Sandbox) |
 | `infrastructure/configs/` | Their configuration, applied second (Let's Encrypt issuer, certificate, Infisical Cloud connection) |
 | `apps/` | Apps, applied last |
+| `*/experiments/` | Things I'm trying out, not recommendations (kagent, agentgateway). See [apps/experiments](apps/experiments/README.md) |
 | `.sops.yaml` | Which files SOPS encrypts, and with which public key |
 | `docs/` | Documentation |
 
