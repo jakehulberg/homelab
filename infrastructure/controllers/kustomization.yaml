@@ -8,6 +8,4 @@ resources:
   - infisical-operator
   - agent-sandbox
   - prometheus-operator-crds
-  - kagent-crds
-  - agentgateway
-
+  - experiments
