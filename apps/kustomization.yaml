@@ -9,5 +9,4 @@ resources:
   - airlock
   - agent-vault
   - monitoring
-  - kagent
-
+  - experiments
