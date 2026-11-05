@@ -13,6 +13,11 @@ spec:
     auth:
       secretRef:
         name: anthropic-secret
+    ai:
+      routes:                    # path suffix → API format. default is OpenAI completions
+        /v1/messages: Messages
+        /v1/messages/count_tokens: AnthropicTokenCount
+
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
