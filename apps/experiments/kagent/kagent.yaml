@@ -32,8 +32,8 @@ spec:
       anthropic:
         provider: Anthropic
         model: claude-sonnet-5-5
-        apiKeySecretRef: null        # no key; agentgateway adds it
-        apiKeySecretKey: null
+        apiKeySecretRef: kagent-anthropic-placeholder  # agentgateway swaps in the real key
+        apiKeySecretKey: ANTHROPIC_API_KEY
         config:
           baseUrl: http://agentgateway-proxy.agentgateway-system
     kagent-tools:
