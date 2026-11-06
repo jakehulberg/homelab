@@ -1,0 +1,10 @@
+# The agent runtime refuses to start without ANTHROPIC_API_KEY.
+# agentgateway replaces this value with the real key.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kagent-anthropic-placeholder
+  namespace: kagent
+type: Opaque
+stringData:
+  ANTHROPIC_API_KEY: placeholder
