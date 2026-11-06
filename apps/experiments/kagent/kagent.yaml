@@ -32,8 +32,10 @@ spec:
       anthropic:
         provider: Anthropic
         model: claude-sonnet-5-5
-        apiKeySecretRef: kagent-anthropic
-        apiKeySecretKey: ANTHROPIC_API_KEY
+        apiKeySecretRef: null        # no key; agentgateway adds it
+        apiKeySecretKey: null
+        config:
+          baseUrl: http://agentgateway-proxy.agentgateway-system
     kagent-tools:
       rbac:
         readOnly: true         # get/list/watch, no Secrets; the chart's default is cluster-admin
