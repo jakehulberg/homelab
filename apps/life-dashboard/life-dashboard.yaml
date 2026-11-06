@@ -37,7 +37,7 @@ spec:
         # On an empty volume (new node, rebuilt cluster), pull the databases back from R2 first.
         # Does nothing if the database already exists or there's no backup yet.
         - name: restore-finance
-          image: litestream/litestream:0.5.17
+          image: litestream/litestream:0.5.18
           args: [restore, -config, /etc/litestream/litestream.yml, -if-db-not-exists, -if-replica-exists, /data/finance.db]
           envFrom:
             - secretRef:
@@ -46,7 +46,7 @@ spec:
             - { name: data, mountPath: /data }
             - { name: litestream-config, mountPath: /etc/litestream }
         - name: restore-tasks
-          image: litestream/litestream:0.5.17
+          image: litestream/litestream:0.5.18
           args: [restore, -config, /etc/litestream/litestream.yml, -if-db-not-exists, -if-replica-exists, /data/tasks.db]
           envFrom:
             - secretRef:
@@ -57,7 +57,7 @@ spec:
         # Litestream itself. restartPolicy: Always makes it a sidecar: it starts before the app,
         # runs alongside it for the pod's whole life, and stops after it.
         - name: litestream
-          image: litestream/litestream:0.5.17
+          image: litestream/litestream:0.5.18
           restartPolicy: Always
           args: [replicate, -config, /etc/litestream/litestream.yml]
           envFrom:
