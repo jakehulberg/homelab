@@ -7,3 +7,4 @@ labels:
 resources:
   - kagent
   - agentgateway
+  - openshell

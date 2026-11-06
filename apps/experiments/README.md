@@ -9,3 +9,4 @@ Objects here carry the label `homelab.jakehulberg.com/experiment: "true"`.
 |---|---|
 | kagent | Agents as Kubernetes objects (`apps/experiments/kagent`, CRDs in `infrastructure/controllers/experiments/kagent-crds`) |
 | agentgateway | Proxy for LLM, MCP and A2A traffic; holds the Anthropic key for kagent (`apps/experiments/agentgateway`, controller in `infrastructure/controllers/experiments/agentgateway`) |
+| openshell | Sandboxed runtime for agents with policy on files, network and credentials (`apps/experiments/openshell`, needs Agent Sandbox) |
