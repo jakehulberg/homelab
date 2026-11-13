@@ -11,6 +11,11 @@
       "matchManagers": ["kubernetes"],
       "matchFileNames": ["clusters/homelab/flux-system/**"],
       "enabled": false
+    },
+    {
+      "description": "Auto-merge non-major updates; majors wait for review",
+      "matchUpdateTypes": ["patch", "minor", "digest"],
+      "automerge": true
     }
   ]
 }
