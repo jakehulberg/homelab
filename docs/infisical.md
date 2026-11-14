@@ -60,7 +60,7 @@ helm template infisical infisical-helm-charts/infisical-standalone --version 1.1
 
 On a fresh database, the first start takes about 10 minutes: Infisical replays every migration
 since its first release, and if the pod and the primary are on different nodes, each query crosses
-Tailscale over Wi-Fi. The pod stays at `0/1 Running` until the migrations finish. Later restarts
+Tailscale. The pod stays at `0/1 Running` until the migrations finish. Later restarts
 take seconds, and upgrades run only the new migrations.
 
 ```sh

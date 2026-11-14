@@ -52,8 +52,6 @@ A Kubernetes homelab managed with Flux. This repo is the source of truth for the
   (Lima autostart may need a logged-in user)
 - **Restore drill:** restore `infisical-db` from R2 into a new Cluster and point a test Infisical
   at it ([storage](docs/storage.md#restore-not-yet-tested))
-- **Ethernet for the minis:** Wi-Fi latency between nodes is 60 to 280ms with spikes, even on
-  direct paths (vzNAT). Wired Ethernet cuts that latency and allows bridged networking
 - **Session minting outside the sandbox pod:** today the `session` sidecar logs in with Kubernetes
   Auth and opens the Agent Vault session inside the pod. Under gVisor both containers share one
   kernel, so an escape from `agent` into the sidecar reaches its Infisical access token. Have the

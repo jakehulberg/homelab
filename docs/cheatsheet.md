@@ -18,7 +18,7 @@ kubectl get infisicalstaticsecret -A       # secret syncs
 limactl list                  # VMs and status
 limactl shell k3s-mini1       # shell into a VM
 limactl start k3s-mini1
-limactl stop k3s-mini1
+limactl shell k3s-mini1 sudo poweroff && limactl stop -f k3s-mini1   # plain stop hangs
 ```
 
 More in [nodes](nodes.md#taking-a-node-down).

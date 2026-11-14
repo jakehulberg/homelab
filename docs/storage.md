@@ -14,7 +14,7 @@ data here.
 - **Postgres:** CloudNativePG (`infrastructure/controllers/cloudnative-pg/`, chart `0.29.1`). Each
   app declares a `Cluster`. With `instances: 2`, the operator runs a primary plus a live copy on a
   second node and fails over if the primary's node dies
-- **Not used:** Longhorn. Replicating every volume is heavy, slow over Wi-Fi plus Tailscale, and
+- **Not used:** Longhorn. Replicating every volume is heavy, adds constant traffic over Tailscale, and
   needs more disk than k3s-mini1 has. Replication happens per database instead
 
 ## Databases

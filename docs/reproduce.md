@@ -79,8 +79,8 @@ Size the VMs in `lima/` for your hardware ([nodes](nodes.md)).
 
 ## 4. Nodes and k3s
 
-Follow [bootstrap](bootstrap.md) steps 1 to 7: token, VMs (with `vzNAT`,
-[networking](networking.md#lima-vm-networking-vznat)), Tailscale, k3s config including
+Follow [bootstrap](bootstrap.md) steps 1 to 7: token, VMs (bridged onto
+the LAN, [networking](networking.md#lima-vm-networking-bridged)), Tailscale, k3s config including
 `resolv.conf`, k3s servers, the agent, and kubeconfig. If you keep `agents`, also do
 [bootstrap step 11](bootstrap.md#11-gvisor-on-the-minis).
 
@@ -139,7 +139,7 @@ takes about 10 minutes ([infisical](infisical.md#first-boot)).
 
 Read [incidents](incidents/). The two that apply to any rebuild:
 
-- On Wi-Fi, use `vzNAT` (or bridged networking on ethernet) so Tailscale connects the nodes
-  directly ([networking](networking.md#lima-vm-networking-vznat))
+- Put the machines on Ethernet and bridge the VMs onto the LAN, so Tailscale connects the nodes
+  directly ([networking](networking.md#lima-vm-networking-bridged))
 - Give k3s its own `resolv.conf` so pod DNS skips your router's search domains
   ([networking](networking.md#dns-inside-the-cluster))
