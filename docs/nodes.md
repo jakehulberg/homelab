@@ -62,9 +62,13 @@ kubectl drain k3s-mini3 --ignore-daemonsets --delete-emptydir-data
 On the mini, as the VM's owner (`theodorecomputeiii` on mini1, `mini-2`, `mini3`):
 
 ```sh
-limactl stop k3s-mini3
+limactl shell k3s-mini3 sudo poweroff
+limactl stop -f k3s-mini3
 limactl edit k3s-mini3 --memory 10   # GiB; also --cpus, --disk; answer yes to start it
 ```
+
+`limactl stop` on its own hangs at `Shutting down VZ` on these VMs. Powering off from inside the
+VM shuts k3s down cleanly, and `stop -f` then clears Lima's leftover files.
 
 If you changed the VM's size, update its `lima/` file to match, so the repo stays the source of
 truth.

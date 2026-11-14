@@ -14,11 +14,13 @@ images:
 # No mounts, port forwarding or containerd. The node is reached over Tailscale.
 plain: true
 
-# Apple's VM NAT. Lima's default user-mode network is a "hard" NAT (Tailscale netcheck shows
-# MappingVariesByDestIP: true), which forces node-to-node traffic through Tailscale's relay servers.
-# With vzNAT, Tailscale connects the nodes directly.
+# Bridged onto the home LAN through en0 (Ethernet), so the VM gets its own 192.168.1.x address and
+# Tailscale connects the nodes directly with no NAT in between. Needs socket_vmnet on the mini
+# (docs/bootstrap.md#2-create-the-vms). vzNAT is left from the Wi-Fi setup; Tailscale prefers the
+# LAN path.
 networks:
   - vzNAT: true
+  - lima: bridged
 
 provision:
   - mode: system

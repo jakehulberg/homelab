@@ -1,14 +1,13 @@
 # Networking
 
 All traffic between nodes, pod traffic included, runs over Tailscale, and Traefik is the one
-entry point for apps. The minis are on Wi-Fi, where bridged VM networking is unreliable (most
-access points drop frames from extra MAC addresses), so each VM joins the tailnet itself instead
-of the home LAN.
+entry point for apps. The minis are on Ethernet, and each VM is bridged onto the home LAN, so
+Tailscale connects the nodes directly at about 1ms.
 
 ## Nodes talk over Tailscale
 
-Each Lima VM uses NAT ([vzNAT](#lima-vm-networking-vznat)) and runs its own Tailscale. k3s sends
-everything over Tailscale:
+Each Lima VM has its own LAN address ([bridged](#lima-vm-networking-bridged)) and runs its own
+Tailscale. k3s sends everything over Tailscale:
 
 - `--node-ip` on each node's install command is that node's Tailscale IP
   ([bootstrap](bootstrap.md#5-install-k3s))
@@ -18,30 +17,43 @@ everything over Tailscale:
 Flannel reads the MTU of `tailscale0`, so pod traffic gets Tailscale's smaller MTU without extra
 config.
 
-## Lima VM networking: vzNAT
+## Lima VM networking: bridged
 
-Each VM uses Apple's VM NAT (`networks: - vzNAT: true` in `lima/k3s-mini*.yaml`). Lima's default
-user-mode network is a "hard" NAT, which uses a different outside port for each destination.
-Behind it, Tailscale can't connect the VMs directly and sends node traffic through its relay
-servers, which adds latency and dropped packets. That relay once made the database primary shut down
-([incident](incidents/2026-10-25-infisical-db-failover.md)). vzNAT also gives the VMs IPv6, which
-Tailscale uses for direct paths.
+Each VM is bridged onto the mini's Ethernet port (`- lima: bridged` in `lima/k3s-mini*.yaml`), so
+the router gives it its own `192.168.1.x` address. Tailscale then connects the VMs straight across
+the LAN.
 
-To add vzNAT to an existing VM, take its node down first ([nodes](nodes.md#taking-a-node-down)),
-then run this on the mini that owns the VM:
+```
+k3s-mini1 VM ──┐
+k3s-mini2 VM ──┼── switch ── router 192.168.1.254
+k3s-mini3 VM ──┘   Tailscale: VM ──▶ VM over a LAN address (IPv4 or IPv6), ~1ms
+```
+
+Without the bridge, each VM sits behind its Mac's NAT, and Tailscale has to punch through that NAT
+and the router to connect two VMs. When that fails, Tailscale sends node traffic through its relay
+servers at 60 to 500ms, and etcd drops the node: the relay made the database primary shut down
+([incident](incidents/2026-10-25-infisical-db-failover.md)). etcd expects round trips well under
+10ms between members.
+
+Bridging needs Ethernet: most Wi-Fi access points drop frames from the VM's extra MAC address. The
+`vzNAT` network in the same files is left from the Wi-Fi setup; Tailscale prefers the LAN path.
+
+To bridge an existing VM, install socket_vmnet on its mini ([bootstrap step
+2a](bootstrap.md#2-create-the-vms)), take the node down ([nodes](nodes.md#taking-a-node-down)),
+then run this on the mini as the VM's owner:
 
 ```sh
-limactl stop k3s-mini2
-limactl edit k3s-mini2 --set '.networks += [{"vzNAT": true}]'   # answer yes to start it
+limactl shell k3s-mini2 sudo poweroff
+limactl stop -f k3s-mini2
+limactl edit k3s-mini2 --set '.networks += [{"lima": "bridged"}]'   # answer yes to start it
+limactl shell k3s-mini2 ip -4 addr show lima1                       # inet 192.168.1.x
 ```
 
 ## Tradeoffs
 
-- etcd runs over Wi-Fi plus Tailscale. That's fine for a homelab; if etcd reports errors, moving
-  the minis to ethernet is the fix
 - If Tailscale is down, the cluster network is down
-- Node-to-node latency is Wi-Fi latency: 60 to 280ms on direct paths, with spikes. Ethernet would
-  cut that and allow bridged networking
+- If a mini's Ethernet link drops, its VM loses its LAN address, Tailscale falls back to the
+  vzNAT path or a relay, and etcd may drop that node
 
 ## Reaching services
 
@@ -77,7 +89,8 @@ browser ──:80 / :443──▶ node Tailscale IP (ServiceLB, on every node)
 | `infrastructure/controllers/traefik/` | Traefik chart `42.1.3`: Traefik, its `LoadBalancer` Service, GatewayClass `traefik`, Gateway `traefik-gateway`. Ports, Service type, GatewayClass and Gateway name are chart defaults |
 | `apps/<app>/httproute.yaml` | Each app's HTTPRoute, e.g. `apps/podinfo/httproute.yaml` |
 | `k3s/config.yaml` | `flannel-iface` and `resolv-conf` for every node |
-| `lima/k3s-mini*.yaml` | Each VM's network (`vzNAT`) |
+| `lima/k3s-mini*.yaml` | Each VM's network (`lima: bridged`) |
+| Each mini | socket_vmnet at `/opt/socket_vmnet/bin/`, `/etc/sudoers.d/lima`, and `bridged` on `en0` in `~/.lima/_config/networks.yaml` ([bootstrap](bootstrap.md#2-create-the-vms)) |
 | Each node | `/etc/rancher/k3s/resolv.conf` ([DNS inside the cluster](#dns-inside-the-cluster)) |
 | Cloudflare | The `*.home` DNS records ([certificates](certificates.md#dns-records)) |
 
@@ -141,8 +154,10 @@ kubectl run dnscheck --rm -it --restart=Never --image=busybox:1.37 -- cat /etc/r
 On the mini that owns the VM:
 
 ```sh
-limactl shell k3s-mini2 tailscale netcheck        # MappingVariesByDestIP: false
-limactl shell k3s-mini2 tailscale ping k3s-mini1  # "via <IP>:<port>", not "via DERP(...)"
+route -n get default | grep interface                     # en0 (Ethernet)
+limactl shell k3s-mini2 ip -4 addr show lima1             # inet 192.168.1.x
+limactl shell k3s-mini2 sudo tailscale ping k3s-mini1     # via a LAN address, ~1ms, not DERP(...)
+limactl shell k3s-mini2 tailscale status | grep relay     # nothing
 ```
 
 ## Troubleshooting
@@ -150,5 +165,9 @@ limactl shell k3s-mini2 tailscale ping k3s-mini1  # "via <IP>:<port>", not "via 
 - **`404 page not found` on an app's hostname:** Traefik got the request, but no HTTPRoute matched
   the hostname. Run `kubectl describe httproute <app> -n <app-namespace>` and check that the route
   is `Accepted`
-- **`tailscale ping` shows `via DERP(...)`:** the VM isn't on vzNAT, so its node traffic goes
-  through Tailscale's relays. Add vzNAT ([Lima VM networking](#lima-vm-networking-vznat))
+- **`tailscale ping` shows `via DERP(...)`, or `tailscale status` shows `relay`:** the VM has no
+  LAN address, so its node traffic goes through Tailscale's relays. Check the mini is on `en0` and
+  the VM has an address on `lima1` ([Lima VM networking](#lima-vm-networking-bridged))
+- **`KubePodNotReady` alerts for pods whose health checks time out, on several nodes:** check
+  node-to-node latency first with `tailscale ping`. A relayed path makes database round trips slow
+  enough to fail probes

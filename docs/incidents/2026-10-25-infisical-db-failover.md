@@ -35,7 +35,7 @@ took minutes to become ready. No data lost.
 - Infisical's `REDIS_URL` uses the short Service name `redis`
   ([infisical](../infisical.md#how-it-fits-together))
 - Lima VMs run on `vzNAT`, so Tailscale connects nodes directly instead of relaying
-  ([networking](../networking.md#lima-vm-networking-vznat))
+  ([networking](../networking.md#lima-vm-networking-bridged))
 
 ## Lessons
 

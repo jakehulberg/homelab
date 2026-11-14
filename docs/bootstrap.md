@@ -7,6 +7,8 @@ to Flux.
 ## Prerequisites
 
 - A checkout of this repo on each mini and on the laptop
+- Each mini on Ethernet: `route -n get default | grep interface` on the mini prints `en0`. The VMs
+  bridge onto `en0` ([networking](networking.md#lima-vm-networking-bridged))
 - The Pi on the tailnet: `tailscale status` on the laptop lists it
 - The accounts and laptop tools in [reproduce](reproduce.md#prerequisites)
 
@@ -24,13 +26,30 @@ when the cluster is down.
 
 ## 2. Create the VMs
 
-On each mini (swap in `mini2` / `mini3`):
+On each mini, as the macOS user that will own the VM (swap in `mini2` / `mini3`).
+
+**a. Install Lima and socket_vmnet.** socket_vmnet connects the VM to the bridged network. Lima
+runs it through `sudo`, so it has to be a root-owned copy outside Homebrew. If Homebrew belongs to
+another macOS user (on mini1, `hermes`), run the `brew install` line as that user.
 
 ```sh
-brew install lima
+brew install lima socket_vmnet
+sudo mkdir -p /opt/socket_vmnet/bin
+sudo install -o root -m 755 /opt/homebrew/opt/socket_vmnet/bin/socket_vmnet /opt/socket_vmnet/bin/
+limactl sudoers > /tmp/lima-sudoers && sudo install -o root /tmp/lima-sudoers /etc/sudoers.d/lima
+ls -l /opt/socket_vmnet/bin/socket_vmnet /etc/sudoers.d/lima   # both owned by root
+```
+
+Run the `sudo` lines one at a time: the password prompt takes any lines pasted after it as input.
+In `~/.lima/_config/networks.yaml`, `bridged` should say `interface: en0` (Lima's default).
+
+**b. Create and start the VM:**
+
+```sh
 limactl create --name=k3s-mini1 lima/k3s-mini1.yaml
 limactl start k3s-mini1
 limactl autostart enable k3s-mini1
+limactl shell k3s-mini1 ip -4 addr show lima1   # inet 192.168.1.x
 ```
 
 ## 3. Join the VMs to Tailscale

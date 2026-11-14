@@ -2,7 +2,8 @@
 # Node-specific flags (node-name, node-ip, server, cluster-init) are passed on the install command.
 # See docs/bootstrap.md.
 
-# All node-to-node traffic goes over Tailscale (the minis are on Wi-Fi, so no bridged networking).
+# All node-to-node traffic goes over Tailscale. The VMs are bridged onto the LAN, so Tailscale's
+# paths between them are direct (docs/networking.md#lima-vm-networking-bridged).
 flannel-iface: tailscale0
 resolv-conf: /etc/rancher/k3s/resolv.conf   # DNS for pods: public servers only, no Tailscale or router search domains
 
