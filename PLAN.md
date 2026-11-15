@@ -28,6 +28,21 @@ A Kubernetes homelab managed with Flux. This repo is the source of truth for the
 
 ## To do
 
+- **Top priority: replace k3s-mini1 with the old laptop.** mini1 runs dev workloads that need its
+  RAM, so its node leaves the cluster and the laptop takes over as the third etcd server. Add the
+  laptop first, then remove mini1, so etcd never drops below two of three members:
+  - **Laptop:** on Ethernet, k3s server VM bridged onto the LAN like the minis
+    ([bootstrap](docs/bootstrap.md) steps 2 to 5, joining through `k3s-mini2`), its name in
+    `tls-san` in `k3s/server.yaml`, and gVisor if it should run sandboxes
+    ([bootstrap step 11](docs/bootstrap.md#11-gvisor-on-the-minis))
+  - **Data on mini1's disk:** `authentik-db` has one instance, on mini1, so restore it from R2
+    or add a second instance before the drain. `life-dashboard-data` (SQLite) is on mini1 too, and
+    its Litestream restore is untested. `infisical-db` has a copy on another node; promote it.
+    `openshell/workspace-default--demo` is also on mini1
+  - **Remove mini1:** drain it ([nodes](docs/nodes.md#taking-a-node-down)),
+    `kubectl delete node k3s-mini1`, uninstall k3s in the VM, then delete the VM
+  - **Repoint `k3s-mini1` references:** the laptop kubeconfig, the Pi's `K3S_URL`, `tls-san`, and
+    the docs that name mini1 as the first server
 - **life-dashboard restore drill:** Litestream streams the database to R2 (SSE-C), but a restore
   is untested. Optional: a nightly age-encrypted snapshot CronJob (Litestream 0.5 has no age
   support)
