@@ -25,8 +25,8 @@ browser ──1. OIDC (Authentik)──▶ airlock-web:8080 ──bearer token +
    `pods/exec`, with the prompt on stdin, and streams the output back to the browser
 
 - Claims are labeled with a hash of your OIDC subject; each user sees only their own
-- Task output lives in the orchestrator's memory and is lost on restart, so the orchestrator runs
-  one replica
+- PostgreSQL retains task history and bounded output. The orchestrator stays on one replica for
+  interactive SSE routing
 
 ## What's where
 
@@ -57,7 +57,7 @@ browser ──1. OIDC (Authentik)──▶ airlock-web:8080 ──bearer token +
 The first four are in Infisical Cloud `/airlock`:
 
 - Web loads all of them with `envFrom`
-- The orchestrator gets only `AIRLOCK_API_TOKEN`
+- The orchestrator gets `AIRLOCK_API_TOKEN` and a separate CNPG application URI
 - `AIRLOCK_PUBLIC_URL` and `AIRLOCK_ORCHESTRATOR_URL` aren't secret, so they're set in `web.yaml`
 
 ## Images
@@ -76,8 +76,8 @@ Deployments. The packages are private, so both Deployments pull with `ghcr-pull`
 | Layer | How |
 |---|---|
 | Kubernetes API | The orchestrator's Role covers only the `agents` namespace: claims, pools, sandboxes, pods, `pods/exec`. Web has no ServiceAccount token. Sandboxes have `automountServiceAccountToken: false` |
-| Orchestrator | NetworkPolicy: only pods labeled `app: airlock-web` may reach port 8081 |
-| Sandbox network | The template's `networkPolicy` denies ingress and allows egress only to DNS, the Agent Vault proxy and Infisical ([agent-vault](agent-vault.md#network)). k3s enforces NetworkPolicies |
+| Orchestrator | NetworkPolicy: web, labeled sandbox pods, and Prometheus may reach port 8081 |
+| Sandbox network | The template's `networkPolicy` denies ingress and allows egress to DNS, the Agent Vault proxy, Infisical, and the labeled Airlock orchestrator ([agent-vault](agent-vault.md#network)). k3s enforces NetworkPolicies |
 | Credentials | None in the agent container. The Agent Vault proxy adds the API key on the way out |
 | Kernel | gVisor (`runtimeClassName: gvisor`): the agent's syscalls go to gVisor's user-space kernel, not the VM's ([gVisor](#gvisor)) |
 | Sandbox pod | Non-root, `RuntimeDefault` seccomp, no privilege escalation, all capabilities dropped, read-only root filesystem on `agent`, memory limits. The namespace enforces Pod Security `restricted` |
@@ -130,3 +130,26 @@ kubectl logs -n airlock deploy/airlock-orchestrator         # claims and tasks, 
 kubectl exec -n agents <sandbox-pod> -c agent -- uname -r   # 4.4.0, gVisor's kernel
 kubectl exec -n agents <sandbox-pod> -c agent -- dmesg      # gVisor boot lines; refused on runc
 ```
+
+## Durable orchestration
+
+The operations console stores tasks, attempts, workflows, schedules, approvals, messages, and
+bounded execution output in a dedicated `airlock-db` cluster. The Go orchestrator still creates
+SandboxClaims and executes the pool command through `pods/exec`; the web service still uses
+Authentik. [Database operations and recovery](airlock-database.md) covers initialization, backup
+validation, restore, and coordinated release.
+
+`apps/airlock/postgres.yaml` provisions two database instances with 20 GiB each and syncs the
+existing `/r2` credentials into `airlock-r2-credentials`. CNPG creates `airlock-db-app`; only the
+orchestrator reads its `uri`. The mounted `airlock-db-ca` enables certificate and hostname
+verification. No database credential is copied into the web application or agent containers.
+
+The Claude template adds egress only to pods labeled `app: airlock-orchestrator` in `airlock` on
+TCP 8081. The orchestrator ingress matches the template's communication label in `agents`.
+Automated executions receive short-lived, attempt-scoped API credentials through stdin, separate
+from the shared web token. Agent Vault, gVisor, ServiceAccount mounting, and Kubernetes RBAC stay
+unchanged. Logical agents cannot grant themselves tools or Kubernetes access.
+
+`apps/airlock/monitoring.yaml` exposes PodMonitors for the orchestrator and PostgreSQL. Readiness
+uses `/readyz`, which checks PostgreSQL; liveness uses `/healthz`. The orchestrator remains one
+replica for interactive SSE routing, while PostgreSQL coordinates automated workers and schedules.
