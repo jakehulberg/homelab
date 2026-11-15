@@ -48,7 +48,7 @@ metadata:
   name: airlock-orchestrator
   namespace: airlock
 spec:
-  replicas: 1 # task output lives in memory
+  replicas: 1 # interactive SSE sessions stay on this replica
   selector:
     matchLabels:
       app: airlock-orchestrator
@@ -67,6 +67,13 @@ spec:
             - name: http
               containerPort: 8081
           env:
+            - name: AIRLOCK_DATABASE_CA
+              value: /etc/airlock-db-ca/ca.crt
+            - name: AIRLOCK_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: airlock-db-app
+                  key: uri
             - name: AIRLOCK_NAMESPACE
               value: agents
             - name: AIRLOCK_API_TOKEN
@@ -74,7 +81,15 @@ spec:
                 secretKeyRef:
                   name: airlock-secrets-infisical
                   key: AIRLOCK_API_TOKEN # only the token, not the OIDC settings
+          volumeMounts:
+            - name: database-ca
+              mountPath: /etc/airlock-db-ca
+              readOnly: true
           readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+          livenessProbe:
             httpGet:
               path: /healthz
               port: http
@@ -86,9 +101,13 @@ spec:
           resources:
             requests:
               cpu: 20m
-              memory: 64Mi
+              memory: 128Mi
             limits:
-              memory: 256Mi
+              memory: 512Mi
+      volumes:
+        - name: database-ca
+          secret:
+            secretName: airlock-db-ca
 ---
 apiVersion: v1
 kind: Service
@@ -119,5 +138,21 @@ spec:
         - podSelector:
             matchLabels:
               app: airlock-web
+      ports:
+        - port: 8081
+
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: agents
+          podSelector:
+            matchLabels:
+              airlock.jakehulberg.com/communication: 'true'
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
       ports:
         - port: 8081

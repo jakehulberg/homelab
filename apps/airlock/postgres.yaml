@@ -1,0 +1,116 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: airlock-db
+  namespace: airlock
+spec:
+  instances: 2
+  storage:
+    size: 20Gi
+  bootstrap:
+    initdb:
+      database: airlock
+      owner: airlock
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: '1'
+      memory: 1Gi
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: airlock-r2
+  primaryUpdateMethod: switchover
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: airlock-r2
+  namespace: airlock
+spec:
+  retentionPolicy: 30d
+  configuration:
+    destinationPath: s3://homelab-postgres-backups/airlock
+    endpointURL: https://e8dc2af5d31bf4e016b6fab1e2515a27.r2.cloudflarestorage.com
+    s3Credentials:
+      accessKeyId:
+        name: airlock-r2-credentials
+        key: R2_ACCESS_KEY_ID
+      secretAccessKey:
+        name: airlock-r2-credentials
+        key: R2_SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: airlock-db-daily
+  namespace: airlock
+spec:
+  schedule: '0 30 3 * * *'
+  backupOwnerReference: self
+  cluster:
+    name: airlock-db
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+---
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: airlock-r2-credentials
+  namespace: airlock
+spec:
+  infisicalAuthRef:
+    name: homelab-cluster
+    namespace: infisical-operator-system
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: homelab
+      environmentSlug: dev
+      secretPath: /r2
+  targets:
+    - name: airlock-r2-credentials
+      namespace: airlock
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: airlock-db
+  namespace: airlock
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: airlock-db
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: airlock-orchestrator
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: airlock-db
+      ports:
+        - port: 5432
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cnpg-system
+      ports:
+        - port: 8000
+        - port: 5432
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 9187
