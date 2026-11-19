@@ -6,3 +6,5 @@ resources:
   - web.yaml
   - httproute.yaml
   - image-policy.yaml
+  - postgres.yaml
+  - monitoring.yaml

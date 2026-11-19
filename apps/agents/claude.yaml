@@ -30,6 +30,9 @@ metadata:
   namespace: agents
 spec:
   podTemplate:
+    metadata:
+      labels:
+        airlock.jakehulberg.com/communication: "true"
     spec:
       runtimeClassName: gvisor #gVisor kernel instead of the node's kernel.
       serviceAccountName: coding-agent
@@ -138,6 +141,16 @@ spec:
   networkPolicy:
     ingress: []
     egress:
+      - to:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: airlock
+            podSelector:
+              matchLabels:
+                app: airlock-orchestrator
+        ports:
+          - protocol: TCP
+            port: 8081
       - to:
           - namespaceSelector:
               matchLabels:

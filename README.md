@@ -29,6 +29,7 @@ k3s on three Mac minis and a Raspberry Pi, managed by Flux. Change the cluster b
 - [Infisical](docs/infisical.md): the cluster's Infisical, wiring, first boot
 - [Authentik](docs/authentik.md): OIDC sign-in for the cluster's apps
 - [Airlock](docs/airlock.md): agent sandboxes and the UI for claiming them
+- [Airlock database and recovery](docs/airlock-database.md): migrations, backup checks, restores, and coordinated releases
 - [Agent Vault](docs/agent-vault.md): the credential proxy for agent sandboxes
 - [Certificates](docs/certificates.md): HTTPS for `*.home.jakehulberg.com`
 - [Updates](docs/updates.md): Renovate, and what it doesn't cover

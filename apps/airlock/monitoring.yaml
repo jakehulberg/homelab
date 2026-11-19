@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: airlock-orchestrator
+  namespace: airlock
+spec:
+  selector:
+    matchLabels:
+      app: airlock-orchestrator
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: airlock-db
+  namespace: airlock
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: airlock-db
+  podMetricsEndpoints:
+    - port: metrics
