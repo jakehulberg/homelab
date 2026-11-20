@@ -74,7 +74,7 @@ spec:
               memory: 256Mi
       containers:
         - name: life-dashboard
-          image: ghcr.io/jakehulberg/life-dashboard:20261120T025309-667030b # {"$imagepolicy": "flux-system:life-dashboard"}
+          image: ghcr.io/jakehulberg/life-dashboard:20261120T025803-fb91990 # {"$imagepolicy": "flux-system:life-dashboard"}
           ports:
             - name: http
               containerPort: 3000
