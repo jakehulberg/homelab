@@ -30,9 +30,9 @@ spec:
       imagePullSecrets:
         - name: ghcr-pull
       securityContext:
-        runAsUser: 1000       # the image's "node" user; Litestream runs as it too
+        runAsUser: 1000 # the image's "node" user; Litestream runs as it too
         runAsGroup: 1000
-        fsGroup: 1000         # lets them write the volume
+        fsGroup: 1000 # lets them write the volume
       initContainers:
         # On an empty volume (new node, rebuilt cluster), pull the databases back from R2 first.
         # Does nothing if the database already exists or there's no backup yet.
@@ -43,8 +43,8 @@ spec:
             - secretRef:
                 name: litestream-infisical
           volumeMounts:
-            - { name: data, mountPath: /data }
-            - { name: litestream-config, mountPath: /etc/litestream }
+            - {name: data, mountPath: /data}
+            - {name: litestream-config, mountPath: /etc/litestream}
         - name: restore-tasks
           image: litestream/litestream:0.5.18
           args: [restore, -config, /etc/litestream/litestream.yml, -if-db-not-exists, -if-replica-exists, /data/tasks.db]
@@ -52,8 +52,8 @@ spec:
             - secretRef:
                 name: litestream-infisical
           volumeMounts:
-            - { name: data, mountPath: /data }
-            - { name: litestream-config, mountPath: /etc/litestream }
+            - {name: data, mountPath: /data}
+            - {name: litestream-config, mountPath: /etc/litestream}
         # Litestream itself. restartPolicy: Always makes it a sidecar: it starts before the app,
         # runs alongside it for the pod's whole life, and stops after it.
         - name: litestream
@@ -64,8 +64,8 @@ spec:
             - secretRef:
                 name: litestream-infisical
           volumeMounts:
-            - { name: data, mountPath: /data }
-            - { name: litestream-config, mountPath: /etc/litestream }
+            - {name: data, mountPath: /data}
+            - {name: litestream-config, mountPath: /etc/litestream}
           resources:
             requests:
               cpu: 20m
@@ -74,7 +74,7 @@ spec:
               memory: 256Mi
       containers:
         - name: life-dashboard
-          image: ghcr.io/jakehulberg/life-dashboard:20261026T125344-ba3aeba # {"$imagepolicy": "flux-system:life-dashboard"}
+          image: ghcr.io/jakehulberg/life-dashboard:20261120T025309-667030b # {"$imagepolicy": "flux-system:life-dashboard"}
           ports:
             - name: http
               containerPort: 3000
@@ -118,4 +118,3 @@ spec:
     - name: http
       port: 3000
       targetPort: http
----
